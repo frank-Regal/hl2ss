@@ -235,7 +235,7 @@ A sample Unreal project (4.27.2) can be found in the [hl2ss_unreal](hl2ss_unreal
 
 1. Install `viewer` directory as a python package.
    ```bash
-   cd hl2ss/viewer && python -m pip install -e .
+   cd hl2ss && pip install -e .
    ```
 
 ## ROS2 Package
