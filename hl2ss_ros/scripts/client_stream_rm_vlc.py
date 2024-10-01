@@ -18,14 +18,14 @@ import cv2
 
 from viewer import hl2ss
 from viewer import hl2ss_lnm
-
+from enum import Enum
 
 class HoloLensVLCNode:
     def __init__(self):
         rospy.init_node('hololens_vlc_node', anonymous=True)
         
         # ROS Parameters
-        self.host = rospy.get_param('~host', '192.168.1.7')
+        self.host = rospy.get_param('~host', '192.168.11.33')
         self.port = rospy.get_param('~port', hl2ss.StreamPort.RM_VLC_LEFTFRONT)
         self.mode = rospy.get_param('~mode', hl2ss.StreamMode.MODE_1)
         self.divisor = rospy.get_param('~divisor', 1)
@@ -58,7 +58,9 @@ class HoloLensVLCNode:
         data = self.client.get_next_packet()
 
         # Publish image
-        img_msg = self.bridge.cv2_to_imgmsg(data.payload.image, encoding="mono8")
+        # Rotate the image 90 degrees clockwise
+        rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_CLOCKWISE)
+        img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
         img_msg.header.stamp = rospy.Time.now()
         self.image_pub.publish(img_msg)
 
@@ -72,9 +74,9 @@ class HoloLensVLCNode:
             self.pose_pub.publish(pose_msg)
 
         rospy.loginfo(f'Frame captured at {data.timestamp}')
-        rospy.loginfo(f'Sensor Ticks: {data.payload.sensor_ticks}')
-        rospy.loginfo(f'Exposure: {data.payload.exposure}')
-        rospy.loginfo(f'Gain: {data.payload.gain}')
+        # rospy.loginfo(f'Sensor Ticks: {data.payload.sensor_ticks}')
+        # rospy.loginfo(f'Exposure: {data.payload.exposure}')
+        # rospy.loginfo(f'Gain: {data.payload.gain}')
 
     def query_calibration(self):
         data = hl2ss_lnm.download_calibration_rm_vlc(self.host, self.port)

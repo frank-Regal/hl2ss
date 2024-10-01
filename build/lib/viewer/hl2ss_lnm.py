@@ -1,6 +1,6 @@
 
 import struct
-from viewer import hl2ss
+import hl2ss
 
 
 #------------------------------------------------------------------------------
