@@ -1,0 +1,10 @@
+<launch>
+  <node name="hololens_vlc_node" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+    <param name="host" value="192.168.1.7"/>
+    <param name="port" value="3800"/>
+    <param name="mode" value="1"/>
+    <param name="divisor" value="1"/>
+    <param name="profile" value="0"/>
+    <param name="bitrate" value="None"/>
+  </node>
+</launch>
