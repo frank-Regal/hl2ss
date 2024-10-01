@@ -14,11 +14,14 @@ catkin_package(
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/../viewer
+)
+
+catkin_package(
+  INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/../viewer
 )
 
 catkin_install_python(PROGRAMS
   scripts/client_stream_rm_vlc.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-catkin_python_setup()

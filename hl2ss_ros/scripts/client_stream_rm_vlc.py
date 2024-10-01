@@ -7,14 +7,18 @@
 # calibration (single transfer).
 #------------------------------------------------------------------------------
 
+import sys
+import os
+
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PoseStamped
-
 import cv2
-import hl2ss
-import hl2ss_lnm
+
+from viewer import hl2ss
+from viewer import hl2ss_lnm
+
 
 class HoloLensVLCNode:
     def __init__(self):
