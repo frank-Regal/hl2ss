@@ -231,6 +231,15 @@ A sample Unreal project (4.27.2) can be found in the [hl2ss_unreal](hl2ss_unreal
    - Spatial Perception
 6. Add `+DeviceCapabilityList=backgroundSpatialPerception` to Config/HoloLens/HoloLensEngine.ini. See [here](hl2ss_unreal/Config/HoloLens/HoloLensEngine.ini) for an example.
 
+## ROS Package
+
+1. Install `viewer` directory as a python package.
+   ```bash
+   cd hl2ss/viewer && python -m pip install -e .
+   ```
+
+## ROS2 Package
+
 ## Build from source and deploy
 
 Building the server application and the plugin requires a Windows 10 machine.
