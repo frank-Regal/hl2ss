@@ -3,7 +3,7 @@
 import rospy
 from sensor_msgs.msg import Imu
 import numpy as np
-from tf.transformations import euler_from_quaternion
+from tf.transformations import quaternion_from_matrix
 
 from viewer import hl2ss
 from viewer import hl2ss_lnm
@@ -36,12 +36,16 @@ class HoloLensSItoIMUNode:
         if dt == 0:
             return [0, 0, 0]
 
-        # Get rotation matrices for both orientations
-        right = np.cross(up, -forward)
-        prev_right = np.cross(self.prev_up, -self.prev_forward)
+        # Get rotation matrices for both orientations using ROS coordinate system
+        forward = -forward  # -z axis
+        right = np.cross(up, forward)  # x axis
+        # up remains as y axis
         
-        current_matrix = np.array([right, up, -forward]).T
-        prev_matrix = np.array([prev_right, self.prev_up, -self.prev_forward]).T
+        prev_forward = -self.prev_forward
+        prev_right = np.cross(self.prev_up, prev_forward)
+        
+        current_matrix = np.array([right, up, forward]).T
+        prev_matrix = np.array([prev_right, self.prev_up, prev_forward]).T
 
         # Ensure matrices are orthogonal
         current_matrix = np.array([
@@ -121,9 +125,6 @@ class HoloLensSItoIMUNode:
         data = self.client.get_next_packet()
         si = hl2ss.unpack_si(data.payload)
         
-        # debug
-        self.print_data(si)
-
         if si.is_valid_head_pose():
             head_pose = si.get_head_pose()
             current_time = rospy.Time.now()
@@ -133,62 +134,32 @@ class HoloLensSItoIMUNode:
             imu_msg.header.stamp = current_time
             imu_msg.header.frame_id = "world"
 
-            # Convert forward and up vectors to rotation matrix
-            forward = np.array(head_pose.forward)
-            up = np.array(head_pose.up)
+            # Convert to right-handed ROS coordinate system
+            forward = -np.array(head_pose.forward)  # -z axis
+            up = np.array(head_pose.up)            # y axis
+            right = np.cross(up, forward)          # x axis
             
             # Calculate angular velocity
             angular_vel = self.compute_angular_velocity(forward, up, current_time)
             
-            # Set angular velocity
-            imu_msg.angular_velocity.x = angular_vel[0]
-            imu_msg.angular_velocity.y = angular_vel[1]
-            imu_msg.angular_velocity.z = angular_vel[2]
+            # Set angular velocity (needs to be transformed to ROS coordinate system)
+            imu_msg.angular_velocity.x = angular_vel[2]    # roll
+            imu_msg.angular_velocity.y = angular_vel[0]    # pitch
+            imu_msg.angular_velocity.z = -angular_vel[1]   # yaw
 
-            # Convert to quaternion orientation
-            right = np.cross(up, -forward)
-            rotation_matrix = np.array([right, up, -forward]).T
-            
-            # Ensure the matrix is orthogonal
-            rotation_matrix = np.array([
-                rotation_matrix[:, 0] / np.linalg.norm(rotation_matrix[:, 0]),
-                rotation_matrix[:, 1] / np.linalg.norm(rotation_matrix[:, 1]),
-                rotation_matrix[:, 2] / np.linalg.norm(rotation_matrix[:, 2])
-            ]).T
+            # Create rotation matrix
+            rotation_matrix = np.array([right, up, forward]).T
+            rotmat = np.eye(4)
+            rotmat[:3, :3] = rotation_matrix
 
-            # Convert rotation matrix to quaternion
-            trace = rotation_matrix.trace()
-            if trace > 0:
-                S = np.sqrt(trace + 1.0) * 2
-                w = 0.25 * S
-                x = (rotation_matrix[2,1] - rotation_matrix[1,2]) / S
-                y = (rotation_matrix[0,2] - rotation_matrix[2,0]) / S
-                z = (rotation_matrix[1,0] - rotation_matrix[0,1]) / S
-            else:
-                if rotation_matrix[0,0] > rotation_matrix[1,1] and rotation_matrix[0,0] > rotation_matrix[2,2]:
-                    S = np.sqrt(1.0 + rotation_matrix[0,0] - rotation_matrix[1,1] - rotation_matrix[2,2]) * 2
-                    w = (rotation_matrix[2,1] - rotation_matrix[1,2]) / S
-                    x = 0.25 * S
-                    y = (rotation_matrix[0,1] + rotation_matrix[1,0]) / S
-                    z = (rotation_matrix[0,2] + rotation_matrix[2,0]) / S
-                elif rotation_matrix[1,1] > rotation_matrix[2,2]:
-                    S = np.sqrt(1.0 + rotation_matrix[1,1] - rotation_matrix[0,0] - rotation_matrix[2,2]) * 2
-                    w = (rotation_matrix[0,2] - rotation_matrix[2,0]) / S
-                    x = (rotation_matrix[0,1] + rotation_matrix[1,0]) / S
-                    y = 0.25 * S
-                    z = (rotation_matrix[1,2] + rotation_matrix[2,1]) / S
-                else:
-                    S = np.sqrt(1.0 + rotation_matrix[2,2] - rotation_matrix[0,0] - rotation_matrix[1,1]) * 2
-                    w = (rotation_matrix[1,0] - rotation_matrix[0,1]) / S
-                    x = (rotation_matrix[0,2] + rotation_matrix[2,0]) / S
-                    y = (rotation_matrix[1,2] + rotation_matrix[2,1]) / S
-                    z = 0.25 * S
+            # Convert to quaternion [x, y, z, w]
+            quaternion = quaternion_from_matrix(rotmat)
 
-            # Set orientation
-            imu_msg.orientation.w = w
-            imu_msg.orientation.x = x
-            imu_msg.orientation.y = y
-            imu_msg.orientation.z = z
+            # Set orientation with proper coordinate transformation
+            imu_msg.orientation.w = -quaternion[3]
+            imu_msg.orientation.x = quaternion[2]
+            imu_msg.orientation.y = quaternion[0]
+            imu_msg.orientation.z = -quaternion[1]
 
             # Set covariances to unknown
             imu_msg.orientation_covariance = [-1] * 9

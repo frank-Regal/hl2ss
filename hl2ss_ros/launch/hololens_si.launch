@@ -7,7 +7,7 @@
         <param name="host" value="$(arg host)" />
     </node>
 
-    <!-- Launch the pose to path node
-    <node pkg="hl2ss_ros" type="pose_to_path.py" name="pose_to_path_node" output="screen"/> -->
+    <!-- Launch the pose to path node  -->
+    <node pkg="hl2ss_ros" type="pose_to_path.py" name="pose_to_path_node" output="screen"/>
 
 </launch>

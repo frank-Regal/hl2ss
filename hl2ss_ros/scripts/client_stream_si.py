@@ -2,6 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
+from tf.transformations import quaternion_from_matrix
 import numpy as np
 
 from viewer import hl2ss
@@ -37,63 +38,40 @@ class HoloLensSINode:
         if si.is_valid_head_pose():
             head_pose = si.get_head_pose()
             
+            # print(f'Head pose: Position={head_pose.position} Forward={head_pose.forward} Up={head_pose.up}')
+            
             # Create PoseStamped message
             pose_msg = PoseStamped()
             pose_msg.header.stamp = rospy.Time.now()
-            pose_msg.header.frame_id = "world"  # or whatever your reference frame is
+            pose_msg.header.frame_id = "world" 
 
-            # Set position
-            pose_msg.pose.position.x = head_pose.position[0]
-            pose_msg.pose.position.y = head_pose.position[1]
-            pose_msg.pose.position.z = head_pose.position[2]
+            ## Convert to right-handed ros coordinate system
+            pose_msg.pose.position.x = -head_pose.position[2]
+            pose_msg.pose.position.y = -head_pose.position[0]
+            pose_msg.pose.position.z = head_pose.position[1]
 
-            # Convert forward and up vectors to quaternion
-            # Note: right = cross(up, -forward)
+            # # Rearranged axes to fix rotation
             forward = -np.array(head_pose.forward)  # -z axis
             up = np.array(head_pose.up)            # y axis
             right = np.cross(up, forward)          # x axis
 
             # Create rotation matrix
-            rotation_matrix = np.array([right, up, forward]).T
+            rot = np.array([right, up, forward]).T
+            rotmat = np.eye(4)
+            rotmat[:3, :3] = rot
             
-            # Convert rotation matrix to quaternion
-            # Using a simplified conversion assuming the matrix is orthogonal
-            trace = rotation_matrix.trace()
-            if trace > 0:
-                S = np.sqrt(trace + 1.0) * 2
-                w = 0.25 * S
-                x = (rotation_matrix[2,1] - rotation_matrix[1,2]) / S
-                y = (rotation_matrix[0,2] - rotation_matrix[2,0]) / S
-                z = (rotation_matrix[1,0] - rotation_matrix[0,1]) / S
-            else:
-                if rotation_matrix[0,0] > rotation_matrix[1,1] and rotation_matrix[0,0] > rotation_matrix[2,2]:
-                    S = np.sqrt(1.0 + rotation_matrix[0,0] - rotation_matrix[1,1] - rotation_matrix[2,2]) * 2
-                    w = (rotation_matrix[2,1] - rotation_matrix[1,2]) / S
-                    x = 0.25 * S
-                    y = (rotation_matrix[0,1] + rotation_matrix[1,0]) / S
-                    z = (rotation_matrix[0,2] + rotation_matrix[2,0]) / S
-                elif rotation_matrix[1,1] > rotation_matrix[2,2]:
-                    S = np.sqrt(1.0 + rotation_matrix[1,1] - rotation_matrix[0,0] - rotation_matrix[2,2]) * 2
-                    w = (rotation_matrix[0,2] - rotation_matrix[2,0]) / S
-                    x = (rotation_matrix[0,1] + rotation_matrix[1,0]) / S
-                    y = 0.25 * S
-                    z = (rotation_matrix[1,2] + rotation_matrix[2,1]) / S
-                else:
-                    S = np.sqrt(1.0 + rotation_matrix[2,2] - rotation_matrix[0,0] - rotation_matrix[1,1]) * 2
-                    w = (rotation_matrix[1,0] - rotation_matrix[0,1]) / S
-                    x = (rotation_matrix[0,2] + rotation_matrix[2,0]) / S
-                    y = (rotation_matrix[1,2] + rotation_matrix[2,1]) / S
-                    z = 0.25 * S
+            # Convert to quaternion [x, y, z, w]
+            quaternion = quaternion_from_matrix(rotmat)
 
-            # Set orientation
-            pose_msg.pose.orientation.w = w
-            pose_msg.pose.orientation.x = x
-            pose_msg.pose.orientation.y = y
-            pose_msg.pose.orientation.z = z
-
+            # Set orientation                    
+            pose_msg.pose.orientation.w = -quaternion[3]
+            pose_msg.pose.orientation.x = quaternion[2]
+            pose_msg.pose.orientation.y = quaternion[0]
+            pose_msg.pose.orientation.z = -quaternion[1]
+            
             # Publish the pose
             self.head_pose_pub.publish(pose_msg)
-            rospy.loginfo(f'Head pose published at {data.timestamp}')
+            rospy.loginfo(f'Head pose published at {rospy.Time.now()}')
 
 if __name__ == '__main__':
     try:
