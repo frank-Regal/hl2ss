@@ -29,7 +29,7 @@ class HoloLensVLCNode:
         self.port = rospy.get_param('~port', hl2ss.StreamPort.RM_VLC_LEFTFRONT)
         self.mode = rospy.get_param('~mode', hl2ss.StreamMode.MODE_1)
         self.divisor = rospy.get_param('~divisor', 1)
-        self.profile = rospy.get_param('~profile', hl2ss.VideoProfile.H265_MAIN)
+        self.profile = rospy.get_param('~profile', hl2ss.VideoProfile.H264_MAIN)
         self.bitrate = rospy.get_param('~bitrate', None)
 
         # Publishers
@@ -59,7 +59,8 @@ class HoloLensVLCNode:
 
         # Publish image
         # Rotate the image 90 degrees clockwise
-        rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_CLOCKWISE)
+        rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        #rotated_image = data.payload.image
         img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
         img_msg.header.stamp = rospy.Time.now()
         self.image_pub.publish(img_msg)
