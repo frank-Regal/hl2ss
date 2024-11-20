@@ -1,0 +1,13 @@
+<launch>
+    <!-- HoloLens IP address -->
+    <arg name="host" default="192.168.0.18" />
+
+    <!-- Launch the spatial input node -->
+    <node pkg="hl2ss_ros" type="client_stream_si.py" name="hololens_si_node" output="screen">
+        <param name="host" value="$(arg host)" />
+    </node>
+
+    <!-- Launch the pose to path node
+    <node pkg="hl2ss_ros" type="pose_to_path.py" name="pose_to_path_node" output="screen"/> -->
+
+</launch>

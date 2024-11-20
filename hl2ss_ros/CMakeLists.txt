@@ -23,5 +23,8 @@ catkin_package(
 
 catkin_install_python(PROGRAMS
   scripts/client_stream_rm_vlc.py
+  scripts/client_stream_si.py
+  scripts/pose_to_path.py
+  scripts/client_stream_si_imu.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

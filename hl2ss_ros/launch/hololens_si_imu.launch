@@ -1,0 +1,10 @@
+<launch>
+    <!-- HoloLens IP address -->
+    <arg name="host" default="192.168.0.18" />
+
+    <!-- Launch the spatial input IMU node -->
+    <node pkg="hl2ss_ros" type="client_stream_si_imu.py" name="hololens_si_imu_node" output="screen">
+        <param name="host" value="$(arg host)" />
+    </node>
+
+</launch>
