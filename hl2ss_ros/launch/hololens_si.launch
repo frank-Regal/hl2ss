@@ -1,6 +1,8 @@
 <launch>
+    <arg name="device" default="192.168.11.21"/>
+
     <!-- HoloLens IP address -->
-    <arg name="host" default="192.168.0.18" />
+    <arg name="host" default="$(arg device)" />
 
     <!-- Launch the spatial input node -->
     <node pkg="hl2ss_ros" type="client_stream_si.py" name="hololens_si_node" output="screen">
