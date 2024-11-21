@@ -19,7 +19,7 @@ class HoloLensSINode:
         self.odom_pub = rospy.Publisher('hololens/odom', Odometry, queue_size=10)
         
         self.client = None
-
+        self.log_info = False
     def start(self):
         # Initialize the spatial input client with the host address
         self.client = hl2ss_lnm.rx_si(self.host, hl2ss.StreamPort.SPATIAL_INPUT)
@@ -123,7 +123,9 @@ class HoloLensSINode:
 
             # Publish odometry message
             self.odom_pub.publish(odom_msg)
-            rospy.loginfo(f'Odometry published at {rospy.Time.now()}')
+            if self.log_info == False:
+                rospy.loginfo(f'Publishing odometry to topic "hololens/odom" ...')
+                self.log_info = True
         
     def calcuate_twist(self, current_position, current_orientation):
         

@@ -34,10 +34,11 @@ class HoloLensVLCNode:
 
         # Publishers
         self.image_pub = rospy.Publisher('hololens/vlc_image', Image, queue_size=10)
-        self.pose_pub = rospy.Publisher('hololens/vlc_pose', PoseStamped, queue_size=10)
+        # self.pose_pub = rospy.Publisher('hololens/vlc_pose', PoseStamped, queue_size=10)
 
         self.bridge = CvBridge()
         self.client = None
+        self.log_info = False
 
     def start(self):
         if self.mode == hl2ss.StreamMode.MODE_2:
@@ -65,16 +66,18 @@ class HoloLensVLCNode:
         img_msg.header.stamp = rospy.Time.now()
         self.image_pub.publish(img_msg)
 
-        # Publish pose if available
-        if self.mode == hl2ss.StreamMode.MODE_1:
-            pose_msg = PoseStamped()
-            pose_msg.header.stamp = rospy.Time.now()
-            # Convert data.pose to pose_msg.pose
-            # This conversion depends on the format of data.pose
-            # You may need to adjust this part based on the actual data structure
-            self.pose_pub.publish(pose_msg)
+        # # Publish pose if available
+        # if self.mode == hl2ss.StreamMode.MODE_1:
+        #     pose_msg = PoseStamped()
+        #     pose_msg.header.stamp = rospy.Time.now()
+        #     # Convert data.pose to pose_msg.pose
+        #     # This conversion depends on the format of data.pose
+        #     # You may need to adjust this part based on the actual data structure
+        #     self.pose_pub.publish(pose_msg)
 
-        rospy.loginfo(f'Frame captured at {data.timestamp}')
+        if self.log_info == False:
+            rospy.loginfo(f'Publishing VLC stream to topic "hololens/vlc_image" ...')
+            self.log_info = True
         # rospy.loginfo(f'Sensor Ticks: {data.payload.sensor_ticks}')
         # rospy.loginfo(f'Exposure: {data.payload.exposure}')
         # rospy.loginfo(f'Gain: {data.payload.gain}')
