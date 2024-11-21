@@ -2,6 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_matrix
 import numpy as np
 
@@ -40,28 +41,73 @@ class HoloLensSINode:
             
             # print(f'Head pose: Position={head_pose.position} Forward={head_pose.forward} Up={head_pose.up}')
             
+            # Set position in ROS coordinates
+            position_rh_ros_coords = np.array([
+                -head_pose.position[2], 
+                -head_pose.position[0], 
+                head_pose.position[1]
+                ])
+            
+            # Get orientation
+            forward = -np.array(head_pose.forward) # -z axis
+            up = np.array(head_pose.up)            # y axis
+            right = np.cross(up, forward)          # x axis
+            rot = np.array([right, up, forward]).T # rotation matrix
+            rotmat = np.eye(4)
+            rotmat[:3, :3] = rot
+            quaternion = quaternion_from_matrix(rotmat) # create quaternion from rotation matrix
+            
+            # Set orientation in ROS coordinates
+            quaternion_rh_ros_coords = np.array([
+                 quaternion[2], # x
+                 quaternion[0], # y
+                -quaternion[1], # z
+                -quaternion[3]  # w
+                ])
+
             # Create PoseStamped message
             pose_msg = PoseStamped()
             pose_msg.header.stamp = rospy.Time.now()
             pose_msg.header.frame_id = "world" 
 
             ## Convert to right-handed ros coordinate system
-            pose_msg.pose.position.x = -head_pose.position[2]
-            pose_msg.pose.position.y = -head_pose.position[0]
-            pose_msg.pose.position.z = head_pose.position[1]
-
-            # # Rearranged axes to fix rotation
-            forward = -np.array(head_pose.forward)  # -z axis
-            up = np.array(head_pose.up)            # y axis
-            right = np.cross(up, forward)          # x axis
-
-            # Create rotation matrix
-            rot = np.array([right, up, forward]).T
-            rotmat = np.eye(4)
-            rotmat[:3, :3] = rot
+            pose_msg.pose.position.x = position_rh_ros_coords[0]
+            pose_msg.pose.position.y = position_rh_ros_coords[1]
+            pose_msg.pose.position.z = position_rh_ros_coords[2]
             
-            # Convert to quaternion [x, y, z, w]
-            quaternion = quaternion_from_matrix(rotmat)
+            # Set orientation                    
+            pose_msg.pose.orientation.x = quaternion_rh_ros_coords[0]
+            pose_msg.pose.orientation.y = quaternion_rh_ros_coords[1]
+            pose_msg.pose.orientation.z = quaternion_rh_ros_coords[2]
+            pose_msg.pose.orientation.w = quaternion_rh_ros_coords[3]
+            
+            # Publish the pose
+            self.head_pose_pub.publish(pose_msg)
+            rospy.loginfo(f'Head pose published at {rospy.Time.now()}')
+
+            
+            # # Create PoseStamped message
+            # pose_msg = PoseStamped()
+            # pose_msg.header.stamp = rospy.Time.now()
+            # pose_msg.header.frame_id = "world" 
+
+            # ## Convert to right-handed ros coordinate system
+            # pose_msg.pose.position.x = -head_pose.position[2]
+            # pose_msg.pose.position.y = -head_pose.position[0]
+            # pose_msg.pose.position.z = head_pose.position[1]
+
+            # # # Rearranged axes to fix rotation
+            # forward = -np.array(head_pose.forward)  # -z axis
+            # up = np.array(head_pose.up)            # y axis
+            # right = np.cross(up, forward)          # x axis
+
+            # # Create rotation matrix
+            # rot = np.array([right, up, forward]).T
+            # rotmat = np.eye(4)
+            # rotmat[:3, :3] = rot
+            
+            # # Convert to quaternion [x, y, z, w]
+            # quaternion = quaternion_from_matrix(rotmat)
 
             # Set orientation                    
             pose_msg.pose.orientation.w = -quaternion[3]

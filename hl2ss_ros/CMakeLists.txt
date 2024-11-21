@@ -26,5 +26,6 @@ catkin_install_python(PROGRAMS
   scripts/client_stream_si.py
   scripts/pose_to_path.py
   scripts/client_stream_si_imu.py
+  scripts/si_to_odom_pub.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
