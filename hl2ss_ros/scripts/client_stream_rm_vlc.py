@@ -23,6 +23,7 @@ from enum import Enum
 class HoloLensVLCNode:
     def __init__(self):
         rospy.init_node('hololens_vlc_node', anonymous=True)
+        self.ag_n = rospy.get_param('~ag_n', '0')
         
         # ROS Parameters
         self.host = rospy.get_param('~host', '192.168.11.33')
@@ -33,7 +34,7 @@ class HoloLensVLCNode:
         self.bitrate = rospy.get_param('~bitrate', None)
 
         # Publishers
-        self.image_pub = rospy.Publisher('hololens/vlc_image', Image, queue_size=10)
+        self.image_pub = rospy.Publisher(f'hololens_ag{self.ag_n}/vlc_image', Image, queue_size=10)
         # self.pose_pub = rospy.Publisher('hololens/vlc_pose', PoseStamped, queue_size=10)
 
         self.bridge = CvBridge()
@@ -76,7 +77,7 @@ class HoloLensVLCNode:
         #     self.pose_pub.publish(pose_msg)
 
         if self.log_info == False:
-            rospy.loginfo(f'Publishing VLC stream to topic "hololens/vlc_image" ...')
+            rospy.loginfo(f'Publishing VLC stream to topic "hololens_ag{self.ag_n}/vlc_image" ...')
             self.log_info = True
         # rospy.loginfo(f'Sensor Ticks: {data.payload.sensor_ticks}')
         # rospy.loginfo(f'Exposure: {data.payload.exposure}')

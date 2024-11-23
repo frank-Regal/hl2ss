@@ -14,9 +14,10 @@ class HoloLensSINode:
         
         # ROS Parameters
         self.host = rospy.get_param('~host', '192.168.11.33')
+        self.ag_n = rospy.get_param('~ag_n', '0')
         
         # Publishers
-        self.odom_pub = rospy.Publisher('hololens/odom', Odometry, queue_size=10)
+        self.odom_pub = rospy.Publisher(f'hololens_ag{self.ag_n}/odom', Odometry, queue_size=10)
         
         self.client = None
         self.log_info = False
@@ -82,8 +83,8 @@ class HoloLensSINode:
             # Create Odometry message
             odom_msg = Odometry()
             odom_msg.header.stamp = rospy.Time.now()
-            odom_msg.header.frame_id = "world"
-            odom_msg.child_frame_id = "hololens"
+            odom_msg.header.frame_id = f"hololens_odom_frame"
+            odom_msg.child_frame_id = f"hololens_pose_frame"
             
             # Set position
             odom_msg.pose.pose.position.x = position_rh_ros_coords[0]
@@ -107,24 +108,14 @@ class HoloLensSINode:
             odom_msg.twist.twist.angular.z = angular_vel[2]
 
             # Set covariance matrices
-            odom_msg.pose.covariance = [0.01, 0, 0, 0, 0, 0,
-                                        0, 0.01, 0, 0, 0, 0,
-                                        0, 0, 0.01, 0, 0, 0,
-                                        0, 0, 0, 0.01, 0, 0,
-                                        0, 0, 0, 0, 0.01, 0,
-                                        0, 0, 0, 0, 0, 0.01]
+            odom_msg.pose.covariance = [0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0001]
             
-            odom_msg.twist.covariance = [0.01, 0, 0, 0, 0, 0,
-                                         0, 0.01, 0, 0, 0, 0, 
-                                         0, 0, 0.01, 0, 0, 0,
-                                         0, 0, 0, 0.01, 0, 0,
-                                         0, 0, 0, 0, 0.01, 0,
-                                         0, 0, 0, 0, 0, 0.01]
+            odom_msg.twist.covariance = [0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0001]
 
             # Publish odometry message
             self.odom_pub.publish(odom_msg)
             if self.log_info == False:
-                rospy.loginfo(f'Publishing odometry to topic "hololens/odom" ...')
+                rospy.loginfo(f'Publishing odometry to topic "hololens_ag{self.ag_n}/odom" ...')
                 self.log_info = True
         
     def calcuate_twist(self, current_position, current_orientation):

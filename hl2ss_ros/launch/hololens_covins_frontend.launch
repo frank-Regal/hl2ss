@@ -1,15 +1,18 @@
 <launch>
     <!-- HoloLens IP address -->
     <arg name="device" default="192.168.11.21"/>
+    <arg name="ag_n" default="0"/>
 
     <!-- Launch VLC stream -->
     <include file="$(find hl2ss_ros)/launch/hololens_vlc.launch">
         <arg name="device" value="$(arg device)"/>
+        <arg name="ag_n" value="$(arg ag_n)"/>
     </include>
 
     <!-- Launch odometry publisher -->
     <include file="$(find hl2ss_ros)/launch/hololens_odom.launch">
         <arg name="device" value="$(arg device)"/>
+        <arg name="ag_n" value="$(arg ag_n)"/>
     </include>
     
 </launch>

@@ -1,9 +1,10 @@
 <launch>
     <!-- HoloLens IP address -->
     <arg name="device" default="192.168.11.21"/>
+    <arg name="ag_n" default="0"/>
 
     <!-- Launch the spatial input IMU node -->
-    <node pkg="hl2ss_ros" type="si_to_odom_pub.py" name="si_to_odom_node" output="screen">
+    <node pkg="hl2ss_ros" type="si_to_odom_pub.py" name="si_to_odom_node_ag$(arg ag_n)" output="screen">
         <param name="host" value="$(arg device)" />
     </node>
 
