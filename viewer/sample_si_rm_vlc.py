@@ -21,13 +21,13 @@ import hl2ss_sa
 # Settings --------------------------------------------------------------------
 
 # HoloLens 2 address
-host = "192.168.1.7"
+host = "192.168.0.21"
 
 # Calibration folder (must exist but can be empty)
 calibration_path = '../calibration'
 
 # Port
-vlc_port = hl2ss.StreamPort.RM_VLC_LEFTFRONT
+vlc_port = hl2ss.StreamPort.RM_VLC_LEFTLEFT
 
 # Marker properties
 radius = 5
