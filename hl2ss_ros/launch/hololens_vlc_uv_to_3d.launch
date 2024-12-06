@@ -1,0 +1,24 @@
+<launch>
+  <arg name="device" default="192.168.0.21"/>
+  <arg name="ag_n" default="0"/>
+  <node name="sample_uv_to_3d_vlc_node_ag$(arg ag_n)" pkg="hl2ss_ros" type="sample_uv_to_3d_vlc.py" output="screen">
+    <param name="host" value="$(arg device)"/>
+    <!-- port options:
+    RM_VLC_LEFTFRONT     = 3800
+    RM_VLC_LEFTLEFT      = 3801
+    RM_VLC_RIGHTFRONT    = 3802
+    RM_VLC_RIGHTRIGHT    = 3803 
+    -->
+    <param name="port" value="3802"/>
+    <!-- Stream Operating Mode
+    0: Device data (e.g. video)
+    1: Device data + location data (e.g. video + camera pose)
+    2: Device constants (e.g. camera intrinsics) 
+    -->
+    <param name="mode" value="1"/>
+    <param name="divisor" value="1"/>
+    <param name="profile" value="0"/>
+    <param name="bitrate" value="None"/>
+    <param name="calibration_path" value="/mnt/c/Users/Frank/devel/ws_hololens/src/hl2ss/calibration"/>
+  </node>
+</launch>
