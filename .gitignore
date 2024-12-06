@@ -52,3 +52,4 @@ hl2ss_td/calibration/*
 *.egg-info
 *.appxbundle
 build/
+.vscode/
