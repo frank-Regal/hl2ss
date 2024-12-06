@@ -51,4 +51,4 @@ hl2ss_td/calibration/*
 /extensions/client_python_mt/__pycache__
 *.egg-info
 *.appxbundle
-build
+build/
