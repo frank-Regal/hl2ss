@@ -44,6 +44,12 @@ def ros_to_unity_translation(translation):
 def ros_to_unity_quaternion(quaternion):
     return [quaternion[1], -quaternion[2], -quaternion[0], quaternion[3]]
 
+def hl2ss_to_ros_translation(translation):
+    return [-translation[2], -translation[0], translation[1]]
+
+def hl2ss_to_ros_quaternion(quaternion):
+    return [-quaternion[2], -quaternion[0], quaternion[1], quaternion[3]]
+
 class HoloLensVLCNode:
     # -----------------------------------------------------------------------------
     # Initialize the node
@@ -118,8 +124,8 @@ class HoloLensVLCNode:
         # Get next frame from VLC camera
         data = self.client.get_next_packet()
 
-        # Rotate image for correct orientation
-        rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        # Rotate image for correct orientation based on camera port
+        rotated_image = cv2.rotate(data.payload.image, hl2ss_3dcv.rm_vlc_get_rotation(self.port))
     
         # Publish camera image
         img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
@@ -150,12 +156,12 @@ class HoloLensVLCNode:
             camera_to_world = data.pose.transpose()
             
             # Convert coordinate systems:
-            # Unity (Left-handed):  X=Right, Y=Up, Z=Forward
-            # ROS (Right-handed):   X=Forward, Y=Left, Z=Up
-            translation = unity_to_ros_translation(camera_to_world[:3, 3])
+            # HL2SS (Right-handed): X=right, Y=up, Z=-forward
+            # ROS (Right-handed):   X=forward, Y=left, Z=up
+            translation = hl2ss_to_ros_translation(camera_to_world[:3, 3])
             rot_se3 = np.eye(4)
-            rot_se3[:3, :3] = camera_to_world[:3, :3]
-            orientation = unity_to_ros_quaternion(quaternion_from_matrix(rot_se3))
+            rot_se3[:3, :3] = self.rotate_about_axis(camera_to_world[:3, :3], 180, 'y')
+            orientation = hl2ss_to_ros_quaternion(quaternion_from_matrix(rot_se3))
             
             self.publish_pose(translation, orientation, 'world', self.pose_pub)
 
@@ -164,6 +170,16 @@ class HoloLensVLCNode:
             rospy.loginfo(f'Publishing VLC stream to topic "hololens_ag{self.ag_n}/vlc_image" ...')
             self.log_info = True
 
+    # -----------------------------------------------------------------------------
+    # Rotate a matrix about a given axis
+    # -----------------------------------------------------------------------------
+    def rotate_about_axis(self, matrix_S03, degree, axis):
+        if axis == 'y':
+            rotation_matrix = np.array([[np.cos(np.radians(degree)), 0, np.sin(np.radians(degree))],
+                                      [0, 1, 0],
+                                      [-np.sin(np.radians(degree)), 0, np.cos(np.radians(degree))]])
+        return matrix_S03 @ rotation_matrix
+    
     # -----------------------------------------------------------------------------
     # Get UV coordinates for wrist and elbow points
     # ----------------------------------------------------------------------------- 
