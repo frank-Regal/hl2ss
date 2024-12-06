@@ -31,7 +31,7 @@ class PoseToPathNode:
         self.marker_pub = rospy.Publisher('hololens/head_markers', MarkerArray, queue_size=10)
         
         # Subscriber
-        self.pose_sub = rospy.Subscriber('hololens/head_pose', PoseStamped, self.pose_callback)
+        self.pose_sub = rospy.Subscriber('/hololens_ag0/3802/vlc_pose', PoseStamped, self.pose_callback)
         
         # Initialize visualization markers
         self.setup_markers()
