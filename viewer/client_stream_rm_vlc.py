@@ -16,7 +16,7 @@ import hl2ss_lnm
 # Settings --------------------------------------------------------------------
 
 # HoloLens address
-host = "192.168.0.21"
+host = "192.168.11.21"
 
 # Port
 # Options:
@@ -78,8 +78,8 @@ while (enable):
     print(f'Pose')
     print(data.pose.transpose())
 
-    cv2.imshow('Video', data.payload.image)
-    cv2.waitKey(1)
+    # cv2.imshow('Video', data.payload.image)
+    # cv2.waitKey(1)
 
 client.close()
 listener.join()

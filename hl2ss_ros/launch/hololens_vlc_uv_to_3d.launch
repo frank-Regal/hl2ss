@@ -1,5 +1,5 @@
 <launch>
-  <arg name="device" default="192.168.0.21"/>
+  <arg name="device" default="192.168.11.21"/>
   <arg name="ag_n" default="0"/>
   <node name="sample_uv_to_3d_vlc_node_ag$(arg ag_n)" pkg="hl2ss_ros" type="sample_uv_to_3d_vlc.py" output="screen">
     <param name="host" value="$(arg device)"/>
@@ -19,6 +19,6 @@
     <param name="divisor" value="1"/>
     <param name="profile" value="0"/>
     <param name="bitrate" value="None"/>
-    <param name="calibration_path" value="/mnt/c/Users/Frank/devel/ws_hololens/src/hl2ss/calibration"/>
+    <param name="calibration_path" value="/project/ws_dev/src/hl2ss/calibration"/>
   </node>
 </launch>
