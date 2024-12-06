@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
-#------------------------------------------------------------------------------
-# This script receives video from one of the HoloLens sideview grayscale
-# cameras and publishes it as a ROS 1 node. The camera resolution is 640x480 @ 30 FPS.
-# The stream supports three operating modes: 0) video, 1) video + rig pose, 2) query 
-# calibration (single transfer).
-#------------------------------------------------------------------------------
+"""
+HoloLens VLC Camera Node with UV to 3D Point Conversion
+
+This node receives video from one of the HoloLens sideview grayscale cameras (VLC)
+and performs UV to 3D point conversion. It publishes:
+- Camera images (640x480 @ 30 FPS)
+- Camera pose
+- 3D points converted from UV coordinates
+
+The stream supports three operating modes:
+0) video only
+1) video + rig pose
+2) query calibration (single transfer)
+"""
 
 import sys
 import os
@@ -161,6 +169,26 @@ class HoloLensVLCNode:
         
     # Convert UV coordinates to 3D points ----------------------------------------
     def uv_to_3d(self, u, v, depth, intrinsics, extrinsics, pose):
+        """
+        Convert UV image coordinates to 3D world coordinates.
+        
+        Args:
+            u (float): U coordinate in image space
+            v (float): V coordinate in image space
+            depth (float): Depth value in meters
+            intrinsics (np.ndarray): Camera intrinsic matrix (3x3)
+            extrinsics (np.ndarray): Camera extrinsic matrix (4x4)
+            pose (np.ndarray): Camera pose matrix (4x4)
+        
+        Returns:
+            np.ndarray: 3D point in world coordinates
+        
+        Raises:
+            ValueError: If depth is zero or negative
+        """
+        if depth <= 0:
+            raise ValueError("Depth must be positive")
+        
         # Normalize coordinates
         x = (u - intrinsics[2, 0]) / intrinsics[0, 0]
         y = (v - intrinsics[2, 1]) / intrinsics[1, 1]
@@ -173,7 +201,6 @@ class HoloLensVLCNode:
         point_camera = xy1 * (depth / ray_length)
         
         # Transform to world
-        # camera_to_world = pose @ hl2ss_3dcv.rignode_to_camera(extrinsics)
         camera_to_world = hl2ss_3dcv.camera_to_rignode(extrinsics) @ hl2ss_3dcv.reference_to_world(pose)
         point_world = hl2ss_3dcv.transform(point_camera, camera_to_world)
         
