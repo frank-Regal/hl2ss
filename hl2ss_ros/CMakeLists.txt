@@ -27,5 +27,6 @@ catkin_install_python(PROGRAMS
   scripts/pose_to_path.py
   scripts/client_stream_si_imu.py
   scripts/si_to_odom_pub.py
+  scripts/sample_uv_to_3d_vlc.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
