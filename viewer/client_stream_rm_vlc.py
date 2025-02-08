@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # This script receives video from one of the HoloLens sideview grayscale
-# cameras and plays it. The camera resolution is 640x480 @ 30 FPS. The stream 
-# supports three operating modes: 0) video, 1) video + rig pose, 2) query 
+# cameras and plays it. The camera resolution is 640x480 @ 30 FPS. The stream
+# supports three operating modes: 0) video, 1) video + rig pose, 2) query
 # calibration (single transfer).
 # Press esc to stop.
 #------------------------------------------------------------------------------
@@ -16,7 +16,7 @@ import hl2ss_lnm
 # Settings --------------------------------------------------------------------
 
 # HoloLens address
-host = "192.168.11.21"
+host = "192.168.11.33"
 
 # Port
 # Options:
@@ -34,7 +34,7 @@ mode = hl2ss.StreamMode.MODE_1
 
 # Framerate denominator (must be > 0)
 # Effective framerate is framerate / divisor
-divisor = 1 
+divisor = 1
 
 # Video encoding profile and bitrate (None = default)
 profile = hl2ss.VideoProfile.H264_BASE

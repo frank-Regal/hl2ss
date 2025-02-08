@@ -1,5 +1,5 @@
 <launch>
-  <arg name="device" default="192.168.11.21"/>
+  <arg name="device" default="192.168.11.33"/>
   <arg name="ag_n" default="0"/>
   <node name="hololens_vlc_node_ag$(arg ag_n)" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
     <param name="host" value="$(arg device)"/>

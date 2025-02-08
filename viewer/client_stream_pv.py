@@ -2,8 +2,8 @@
 # This script receives video from the HoloLens front RGB camera and plays it.
 # The camera supports various resolutions and framerates. See
 # https://github.com/jdibenes/hl2ss/blob/main/etc/pv_configurations.txt
-# for a list of supported formats. The default configuration is 1080p 30 FPS. 
-# The stream supports three operating modes: 0) video, 1) video + camera pose, 
+# for a list of supported formats. The default configuration is 1080p 30 FPS.
+# The stream supports three operating modes: 0) video, 1) video + camera pose,
 # 2) query calibration (single transfer).
 # Press esc to stop.
 #------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ import hl2ss_lnm
 # Settings --------------------------------------------------------------------
 
 # HoloLens address
-host = "192.168.1.7"
+host = "192.168.11.33"
 
 # Operating mode
 # 0: video
@@ -42,7 +42,7 @@ framerate = 30
 
 # Framerate denominator (must be > 0)
 # Effective FPS is framerate / divisor
-divisor = 1 
+divisor = 1
 
 # Video encoding profile and bitrate (None = default)
 profile = hl2ss.VideoProfile.H265_MAIN
