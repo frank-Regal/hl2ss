@@ -68,7 +68,7 @@ void test_rm_vlc(char const* host, uint16_t port)
 
 void test_rm_vlc_save(char const* host, uint16_t port)
 {
-    // std::unique_ptr<hl2ss::rx_rm_vlc> client = hl2ss::lnm::rx_rm_vlc(host, port);
+    // Create client
     std::unique_ptr<hl2ss::rx_rm_vlc> client = hl2ss::lnm::rx_rm_vlc(host, port,
         hl2ss::chunk_size::RM_VLC,        // chunk size
         hl2ss::stream_mode::MODE_0,       // Streaming mode (Video Only)
@@ -77,6 +77,26 @@ void test_rm_vlc_save(char const* host, uint16_t port)
         hl2ss::h26x_level::H264_3,        // H.264 Level 3.0
         2*1024*1024                       // bitrate (2 Mbps)
     );
+
+    int rotation = 0;
+    switch (port) {
+        case hl2ss::stream_port::RM_VLC_LEFTFRONT:
+            rotation = cv::ROTATE_90_CLOCKWISE;
+            break;
+        case hl2ss::stream_port::RM_VLC_LEFTLEFT:
+            rotation = cv::ROTATE_90_COUNTERCLOCKWISE;
+            break;
+        case hl2ss::stream_port::RM_VLC_RIGHTFRONT:
+            rotation = cv::ROTATE_90_COUNTERCLOCKWISE;
+            break;
+        case hl2ss::stream_port::RM_VLC_RIGHTRIGHT:
+            rotation = cv::ROTATE_90_CLOCKWISE;
+            break;
+        default:
+            std::cout << "Invalid port" << std::endl;
+            return;
+    }
+
     std::string port_name = hl2ss::get_port_name(port);
 
     std::cout << "Downloading calibration for " << port_name << " ..." << std::endl;
@@ -86,18 +106,24 @@ void test_rm_vlc_save(char const* host, uint16_t port)
     // Create video writer
     std::string filename = port_name + "_recording.avi";
 
-    cv::Size frame_size(hl2ss::parameters_rm_vlc::WIDTH, hl2ss::parameters_rm_vlc::HEIGHT);
+    // Rotated height and width because of later image rotation
+    cv::Size frame_size(hl2ss::parameters_rm_vlc::HEIGHT, hl2ss::parameters_rm_vlc::WIDTH);
      std::shared_ptr<cv::VideoWriter> video_writer = std::make_shared<cv::VideoWriter>(
         filename, 
         cv::VideoWriter::fourcc('M','J','P','G'), 
         hl2ss::parameters_rm_vlc::FPS, 
         frame_size, 
         false); // for grayscale
-
+    
+    // Check if video writer is opened
     if (!video_writer->isOpened()) {
         std::cout << "Error: Could not open video writer" << std::endl;
         return;
     }
+
+    // Create Mat objects once, outside the loop
+    cv::Mat mat_image(hl2ss::parameters_rm_vlc::HEIGHT, hl2ss::parameters_rm_vlc::WIDTH, CV_8UC1);
+    cv::Mat mat_image_rotated;
 
     client->open();
     for (;;)
@@ -105,17 +131,16 @@ void test_rm_vlc_save(char const* host, uint16_t port)
         std::shared_ptr<hl2ss::packet> data = client->get_next_packet();
         hl2ss::map_rm_vlc region = hl2ss::unpack_rm_vlc(data->payload.get());
 
-        // print_packet_metadata(data->timestamp, data->pose.get());
-        // std::cout << "Sensor Ticks: " << region.metadata->sensor_ticks << std::endl;
-        // std::cout << "Exposure: " << region.metadata->exposure << std::endl;
-        // std::cout << "Gain: " << region.metadata->gain << std::endl;
-
-        cv::Mat mat_image = cv::Mat(hl2ss::parameters_rm_vlc::HEIGHT, hl2ss::parameters_rm_vlc::WIDTH, CV_8UC1, region.image);
+        // Reuse mat_image with new data pointer
+        mat_image.data = region.image;
+        
+        // Reuse mat_image_rotated for rotation
+        cv::rotate(mat_image, mat_image_rotated, rotation);
         
         // Write frame to video file
-        video_writer->write(mat_image);
+        video_writer->write(mat_image_rotated);
         
-        cv::imshow(port_name, mat_image);
+        cv::imshow(port_name, mat_image_rotated);
         if ((cv::waitKey(1) & 0xFF) == 27) { break; }
     }
     
