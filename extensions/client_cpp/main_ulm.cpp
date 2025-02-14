@@ -90,7 +90,14 @@ void test_rm_vlc(char const* host)
     uint64_t buffer_size = 300;
 
     auto configuration = hl2ss::svc::create_configuration<hl2ss::ulm::configuration_rm_vlc>();
-    auto calibration = hl2ss::svc::download_calibration<hl2ss::calibration_rm_vlc>(host, port, &configuration);
+    
+    // Modify configuration parameters
+    configuration.mode = hl2ss::stream_mode::MODE_0;          // Streaming mode (Video Only)
+    configuration.profile = hl2ss::video_profile::H264_BASE;  // Video encoding profile
+    configuration.bitrate = 2*1024*1024;                      // Target bitrate in bits/second (2 mbps)
+    configuration.level = hl2ss::h26x_level::H264_3;          // Use default codec options (good enough for 640x480)
+
+    // auto calibration = hl2ss::svc::download_calibration<hl2ss::calibration_rm_vlc>(host, port, &configuration);
     auto source = hl2ss::svc::open_stream(host, port, buffer_size, &configuration);
 
     std::string window_name = hl2ss::get_port_name(port);
@@ -114,8 +121,8 @@ void test_rm_vlc(char const* host)
         cv::imshow(window_name, image);
 
         std::cout << "timestamp: " << data->timestamp << std::endl;
-        print(region.metadata);
-        print("pose", data->pose);
+        //print(region.metadata);
+        //print("pose", data->pose);
     }
 }
 
@@ -759,8 +766,8 @@ void test_gmq(char const* host)
 
 int main()
 {
-    char const* host = "192.168.1.7";
-    int test_id = 16;
+    char const* host = "192.168.0.22";
+    int test_id = 0;
 
     try
     {

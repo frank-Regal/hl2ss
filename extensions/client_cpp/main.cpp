@@ -68,7 +68,15 @@ void test_rm_vlc(char const* host, uint16_t port)
 
 void test_rm_vlc_save(char const* host, uint16_t port)
 {
-    std::unique_ptr<hl2ss::rx_rm_vlc> client = hl2ss::lnm::rx_rm_vlc(host, port);
+    // std::unique_ptr<hl2ss::rx_rm_vlc> client = hl2ss::lnm::rx_rm_vlc(host, port);
+    std::unique_ptr<hl2ss::rx_rm_vlc> client = hl2ss::lnm::rx_rm_vlc(host, port,
+        hl2ss::chunk_size::RM_VLC,        // chunk size
+        hl2ss::stream_mode::MODE_0,       // Streaming mode (Video Only)
+        1,                                // divisor (1 = full framerate - 30 FPS) 
+        hl2ss::video_profile::H264_BASE,  // Video encoding profile
+        hl2ss::h26x_level::H264_3,        // H.264 Level 3.0
+        2*1024*1024                       // bitrate (2 Mbps)
+    );
     std::string port_name = hl2ss::get_port_name(port);
 
     std::cout << "Downloading calibration for " << port_name << " ..." << std::endl;
@@ -76,11 +84,15 @@ void test_rm_vlc_save(char const* host, uint16_t port)
     std::cout << "Done." << std::endl;
 
     // Create video writer
-    std::shared_ptr<cv::VideoWriter> video_writer;
     std::string filename = port_name + "_recording.avi";
 
     cv::Size frame_size(hl2ss::parameters_rm_vlc::WIDTH, hl2ss::parameters_rm_vlc::HEIGHT);
-    video_writer = std::make_shared<cv::VideoWriter>(filename, cv::VideoWriter::fourcc('M','J','P','G'), hl2ss::parameters_rm_vlc::FPS, frame_size, false);
+     std::shared_ptr<cv::VideoWriter> video_writer = std::make_shared<cv::VideoWriter>(
+        filename, 
+        cv::VideoWriter::fourcc('M','J','P','G'), 
+        hl2ss::parameters_rm_vlc::FPS, 
+        frame_size, 
+        false); // for grayscale
 
     if (!video_writer->isOpened()) {
         std::cout << "Error: Could not open video writer" << std::endl;
@@ -93,10 +105,10 @@ void test_rm_vlc_save(char const* host, uint16_t port)
         std::shared_ptr<hl2ss::packet> data = client->get_next_packet();
         hl2ss::map_rm_vlc region = hl2ss::unpack_rm_vlc(data->payload.get());
 
-        print_packet_metadata(data->timestamp, data->pose.get());
-        std::cout << "Sensor Ticks: " << region.metadata->sensor_ticks << std::endl;
-        std::cout << "Exposure: " << region.metadata->exposure << std::endl;
-        std::cout << "Gain: " << region.metadata->gain << std::endl;
+        // print_packet_metadata(data->timestamp, data->pose.get());
+        // std::cout << "Sensor Ticks: " << region.metadata->sensor_ticks << std::endl;
+        // std::cout << "Exposure: " << region.metadata->exposure << std::endl;
+        // std::cout << "Gain: " << region.metadata->gain << std::endl;
 
         cv::Mat mat_image = cv::Mat(hl2ss::parameters_rm_vlc::HEIGHT, hl2ss::parameters_rm_vlc::WIDTH, CV_8UC1, region.image);
         
