@@ -603,30 +603,30 @@ void test_mt(char const* host)
 
 void test_gmq(char const* host)
 {
-    std::unique_ptr<hl2ss::ipc_gmq> client = hl2ss::lnm::ipc_gmq(host, hl2ss::ipc_port::GUEST_MESSAGE_QUEUE);
-    hl2ss::gmq_message msg;
+    // std::unique_ptr<hl2ss::ipc_gmq> client = hl2ss::lnm::ipc_gmq(host, hl2ss::ipc_port::GUEST_MESSAGE_QUEUE);
+    // hl2ss::gmq_message msg;
 
-    client->open();
+    // client->open();
     
-    while (true)
-    {
-        client->pull(msg);
-        if (msg.command == ~0U) { continue; }
-        uint32_t response = 1;
-        client->push(&response, sizeof(response) / sizeof(uint32_t));
-        break;
-    }
+    // while (true)
+    // {
+    //     client->pull(msg);
+    //     if (msg.command == ~0U) { continue; }
+    //     uint32_t response = 1;
+    //     client->push(&response, sizeof(response) / sizeof(uint32_t));
+    //     break;
+    // }
 
-    client->close();
+    // client->close();
 
-    switch (msg.command)
-    {
-    case 0xFFFFFFFE:
-        std::cout << msg.data << std::endl;
-        break;
-    default:
-        std::cout << "Received command id=" << msg.command << std::endl;
-    }
+    // switch (msg.command)
+    // {
+    // case 0xFFFFFFFE:
+    //     std::cout << msg.data << std::endl;
+    //     break;
+    // default:
+    //     std::cout << "Received command id=" << msg.command << std::endl;
+    // }
 }
 
 //-----------------------------------------------------------------------------
@@ -792,8 +792,8 @@ void test_pv_shared(char const* host)
 
 int main()
 {
-    char const* host = "192.168.1.7";
-    int test_id = 24;
+    char const* host = "192.168.0.22";
+    int test_id = 0;
 
     try
     {
