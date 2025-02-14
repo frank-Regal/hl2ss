@@ -66,6 +66,50 @@ void test_rm_vlc(char const* host, uint16_t port)
     client->close();
 }
 
+void test_rm_vlc_save(char const* host, uint16_t port)
+{
+    std::unique_ptr<hl2ss::rx_rm_vlc> client = hl2ss::lnm::rx_rm_vlc(host, port);
+    std::string port_name = hl2ss::get_port_name(port);
+
+    std::cout << "Downloading calibration for " << port_name << " ..." << std::endl;
+    std::shared_ptr<hl2ss::calibration_rm_vlc> calibration = hl2ss::lnm::download_calibration_rm_vlc(host, port);
+    std::cout << "Done." << std::endl;
+
+    // Create video writer
+    std::shared_ptr<cv::VideoWriter> video_writer;
+    std::string filename = port_name + "_recording.avi";
+
+    cv::Size frame_size(hl2ss::parameters_rm_vlc::WIDTH, hl2ss::parameters_rm_vlc::HEIGHT);
+    video_writer = std::make_shared<cv::VideoWriter>(filename, cv::VideoWriter::fourcc('M','J','P','G'), hl2ss::parameters_rm_vlc::FPS, frame_size, false);
+
+    if (!video_writer->isOpened()) {
+        std::cout << "Error: Could not open video writer" << std::endl;
+        return;
+    }
+
+    client->open();
+    for (;;)
+    {
+        std::shared_ptr<hl2ss::packet> data = client->get_next_packet();
+        hl2ss::map_rm_vlc region = hl2ss::unpack_rm_vlc(data->payload.get());
+
+        print_packet_metadata(data->timestamp, data->pose.get());
+        std::cout << "Sensor Ticks: " << region.metadata->sensor_ticks << std::endl;
+        std::cout << "Exposure: " << region.metadata->exposure << std::endl;
+        std::cout << "Gain: " << region.metadata->gain << std::endl;
+
+        cv::Mat mat_image = cv::Mat(hl2ss::parameters_rm_vlc::HEIGHT, hl2ss::parameters_rm_vlc::WIDTH, CV_8UC1, region.image);
+        
+        // Write frame to video file
+        video_writer->write(mat_image);
+        
+        cv::imshow(port_name, mat_image);
+        if ((cv::waitKey(1) & 0xFF) == 27) { break; }
+    }
+    
+    video_writer->release();
+    client->close();
+}
 //-----------------------------------------------------------------------------
 // RM Depth AHAT
 //-----------------------------------------------------------------------------
@@ -793,7 +837,7 @@ void test_pv_shared(char const* host)
 int main()
 {
     char const* host = "192.168.0.22";
-    int test_id = 0;
+    int test_id = 2;
 
     try
     {
@@ -803,7 +847,7 @@ int main()
         {
         case  0: test_rm_vlc(host, hl2ss::stream_port::RM_VLC_LEFTFRONT); break; // OK
         case  1: test_rm_vlc(host, hl2ss::stream_port::RM_VLC_LEFTLEFT); break; // OK
-        case  2: test_rm_vlc(host, hl2ss::stream_port::RM_VLC_RIGHTFRONT); break; // OK
+        case  2: test_rm_vlc_save(host, hl2ss::stream_port::RM_VLC_RIGHTFRONT); break; // OK
         case  3: test_rm_vlc(host, hl2ss::stream_port::RM_VLC_RIGHTRIGHT); break; // OK
         case  4: test_rm_depth_ahat(host); break; // OK
         case  5: test_rm_depth_longthrow(host); break; // OK
