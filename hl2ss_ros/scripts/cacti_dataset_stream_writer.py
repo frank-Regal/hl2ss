@@ -17,6 +17,7 @@ from viewer import hl2ss_utilities
 from viewer import hl2ss_3dcv
 from datetime import datetime
 
+# Class to track frame timestamps
 class FRAMESTAMP:
     CURRENT = None
     PREVIOUS = None
@@ -78,7 +79,7 @@ class CACTI_DATASET_STREAM_WRITER():
         self.enable = True
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
-        
+        # Initialize Frame Stamp Map to ensure no duplicate frames are written to disk
         self.frame_stamp = {
             hl2ss.StreamPort.RM_VLC_LEFTFRONT     : FRAMESTAMP(),
             hl2ss.StreamPort.RM_VLC_LEFTLEFT      : FRAMESTAMP(),
@@ -87,6 +88,7 @@ class CACTI_DATASET_STREAM_WRITER():
             hl2ss.StreamPort.MICROPHONE           : FRAMESTAMP()
         }
         
+        # Initialize all writers for each port
         self.writer_map = {
             hl2ss.StreamPort.RM_VLC_LEFTFRONT     : lambda port, payload: self.process_vlc(port, payload, self.vlc_writers.get(port)),
             hl2ss.StreamPort.RM_VLC_LEFTLEFT      : lambda port, payload: self.process_vlc(port, payload, self.vlc_writers.get(port)),
@@ -95,38 +97,37 @@ class CACTI_DATASET_STREAM_WRITER():
             hl2ss.StreamPort.MICROPHONE           : lambda port, payload: self.process_mic(port, payload)
         }
         
+        # Initialize audio queue and thread
         self.audio_queue = queue.Queue()
         self.thread = threading.Thread(target=self.audio_worker, args=(self.audio_queue,))
         self.thread.start()
         
-        # Initialize Streams
+        # Finally initialize streams
         self.initialize_streams()
     
     """
     Configure Streams --------------------------------------------------------------------------------
     """
     def configure_streams(self):
-        self.producer.configure(hl2ss.StreamPort.RM_VLC_LEFTFRONT, hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_LEFTFRONT, mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
-        self.producer.configure(hl2ss.StreamPort.RM_VLC_LEFTLEFT, hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_LEFTLEFT, mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
-        self.producer.configure(hl2ss.StreamPort.RM_VLC_RIGHTFRONT, hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_RIGHTFRONT, mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
-        self.producer.configure(hl2ss.StreamPort.RM_VLC_RIGHTRIGHT, hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_RIGHTRIGHT, mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
-        self.producer.configure(hl2ss.StreamPort.MICROPHONE, hl2ss_lnm.rx_microphone(self.host, hl2ss.StreamPort.MICROPHONE, profile=self.mic_profile))
-
-    """
-    Start Configuration Client --------------------------------------------------------------------------
-    """
-    def start_configuration_client(self):
-        try:
-            self.client_rc.open()
-            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_LEFTFRONT, hl2ss.InterfacePriority.NORMAL)
-            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_LEFTLEFT, hl2ss.InterfacePriority.NORMAL)
-            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_RIGHTFRONT, hl2ss.InterfacePriority.NORMAL)
-            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_RIGHTRIGHT, hl2ss.InterfacePriority.NORMAL)
-            self.client_rc.set_interface_priority(hl2ss.StreamPort.MICROPHONE, hl2ss.InterfacePriority.NORMAL)
-            self.client_rc.close()
-        except Exception as e:
-            print(f"Cannot Connect to HoloLens! ({e})")
-            sys.exit(1) 
+        self.producer.configure(hl2ss.StreamPort.RM_VLC_LEFTFRONT, 
+                                hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_LEFTFRONT, 
+                                mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
+        
+        self.producer.configure(hl2ss.StreamPort.RM_VLC_LEFTLEFT, 
+                                hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_LEFTLEFT, 
+                                mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
+        
+        self.producer.configure(hl2ss.StreamPort.RM_VLC_RIGHTFRONT, 
+                                hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_RIGHTFRONT, 
+                                mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
+        
+        self.producer.configure(hl2ss.StreamPort.RM_VLC_RIGHTRIGHT, 
+                                hl2ss_lnm.rx_rm_vlc(self.host, hl2ss.StreamPort.RM_VLC_RIGHTRIGHT, 
+                                mode=self.vlc_mode, profile=self.vlc_profile, level=self.vlc_level, bitrate=self.vlc_bitrate))
+        
+        self.producer.configure(hl2ss.StreamPort.MICROPHONE, 
+                                hl2ss_lnm.rx_microphone(self.host, hl2ss.StreamPort.MICROPHONE, 
+                                profile=self.mic_profile)) 
 
     """
     Initialize Streams --------------------------------------------------------------------------------
@@ -140,13 +141,6 @@ class CACTI_DATASET_STREAM_WRITER():
             while (self.sinks[port].get_buffered_frame(0)[0] != 0):
                 pass
             print(f"Started streaming data from port '{port}' for '{hl2ss.get_port_name(port)}'")
-            
-    """
-    Audio Worker ----------------------------------------------------------------------------------------
-    """
-    def audio_worker(self, audio_queue):
-        while (self.enable):
-            self.mic_frames.append(audio_queue.get())
     
     """
     Create Output Directory ----------------------------------------------------------------------------
@@ -182,6 +176,29 @@ class CACTI_DATASET_STREAM_WRITER():
                 print(f"Created video writer for '{port}'")
         
         return writers
+    
+    """
+    Start Configuration Client --------------------------------------------------------------------------
+    """
+    def start_configuration_client(self):
+        try:
+            self.client_rc.open()
+            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_LEFTFRONT, hl2ss.InterfacePriority.NORMAL)
+            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_LEFTLEFT, hl2ss.InterfacePriority.NORMAL)
+            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_RIGHTFRONT, hl2ss.InterfacePriority.NORMAL)
+            self.client_rc.set_interface_priority(hl2ss.StreamPort.RM_VLC_RIGHTRIGHT, hl2ss.InterfacePriority.NORMAL)
+            self.client_rc.set_interface_priority(hl2ss.StreamPort.MICROPHONE, hl2ss.InterfacePriority.NORMAL)
+            
+        except Exception as e:
+            print(f"Cannot Connect to HoloLens! ({e})")
+            sys.exit(1)
+    
+    """
+    Audio Worker ----------------------------------------------------------------------------------------
+    """
+    def audio_worker(self, audio_queue):
+        while (self.enable):
+            self.mic_frames.append(audio_queue.get())
 
     """
     Write Audio ----------------------------------------------------------------------------------------
@@ -200,6 +217,32 @@ class CACTI_DATASET_STREAM_WRITER():
     
     def set_timestamp(self):
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    """
+    Process VLC ----------------------------------------------------------------------------------------
+    """
+    def process_vlc(self, port, payload, writer):
+        if (payload.image is not None and payload.image.size > 0):
+            if writer is not None:
+                try:
+                    # Rotate image for correct orientation based on camera port 
+                    image_corrected = cv2.rotate(payload.image, hl2ss_3dcv.rm_vlc_get_rotation(port))
+
+                    # Convert image to RGB
+                    frame = hl2ss_3dcv.rm_vlc_to_rgb(image_corrected)
+
+                    # Write frame to writer
+                    writer.write(frame)
+                    
+                except Exception as e:
+                    print(f"Error writing VLC frame for '{port}'! Details: {e}")
+    
+    """
+    Process Microphone --------------------------------------------------------------------------------
+    """
+    def process_mic(self, port, payload):
+        audio_bits = hl2ss_utilities.microphone_planar_to_packed(payload) if (self.mic_profile != hl2ss.AudioProfile.RAW) else payload
+        self.audio_queue.put(audio_bits.tobytes())
     
     """
     Process Streams -----------------------------------------------------------------------------------
@@ -234,33 +277,11 @@ class CACTI_DATASET_STREAM_WRITER():
                 self.producer.stop(port)
                 print(f'Stopped {port}')
                 
+            self.client_rc.close()   
             self.audio_queue.put(b'')
             self.thread.join()
 
-    """
-    Process VLC ----------------------------------------------------------------------------------------
-    """
-    def process_vlc(self, port, payload, writer):
-        if (payload.image is not None and payload.image.size > 0):
-            if writer is not None:
-                try:
-                    # Rotate image for correct orientation based on camera port 
-                    image_corrected = cv2.rotate(payload.image, hl2ss_3dcv.rm_vlc_get_rotation(port))
 
-                    # Convert image to RGB
-                    frame = hl2ss_3dcv.rm_vlc_to_rgb(image_corrected)
-
-                    # Write frame to writer
-                    writer.write(frame)
-                    
-                except Exception as e:
-                    print(f"Error writing VLC frame for '{port}'! Details: {e}")
-                    
-    def process_mic(self, port, payload):
-        audio_bits = hl2ss_utilities.microphone_planar_to_packed(payload) if (self.mic_profile != hl2ss.AudioProfile.RAW) else payload
-        self.audio_queue.put(audio_bits.tobytes())
-
-        
 def main():
     # Initialize ROS node
     rospy.init_node('cacti_dataset_streamer')
