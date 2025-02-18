@@ -53,3 +53,8 @@ hl2ss_td/calibration/*
 *.appxbundle
 build/
 .vscode/
+*.wav
+*.mp4
+*.avi
+*.bin
+*.csv
