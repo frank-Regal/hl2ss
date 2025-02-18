@@ -28,5 +28,6 @@ catkin_install_python(PROGRAMS
   scripts/client_stream_si_imu.py
   scripts/si_to_odom_pub.py
   scripts/sample_uv_to_3d_vlc.py
+  scripts/cacti_dataset_stream_writer.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
