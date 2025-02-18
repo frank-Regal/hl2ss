@@ -17,6 +17,10 @@ from viewer import hl2ss_utilities
 from viewer import hl2ss_3dcv
 from datetime import datetime
 
+class FRAMESTAMP:
+    CURRENT = None
+    PREVIOUS = None
+
 class CACTI_DATASET_STREAM_WRITER():
     def __init__(self, host, dataset_path):
         
@@ -75,7 +79,14 @@ class CACTI_DATASET_STREAM_WRITER():
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         
-        # Initialize Writers
+        self.frame_stamp = {
+            hl2ss.StreamPort.RM_VLC_LEFTFRONT     : FRAMESTAMP(),
+            hl2ss.StreamPort.RM_VLC_LEFTLEFT      : FRAMESTAMP(),
+            hl2ss.StreamPort.RM_VLC_RIGHTFRONT    : FRAMESTAMP(),
+            hl2ss.StreamPort.RM_VLC_RIGHTRIGHT    : FRAMESTAMP(),
+            hl2ss.StreamPort.MICROPHONE           : FRAMESTAMP()
+        }
+        
         self.writer_map = {
             hl2ss.StreamPort.RM_VLC_LEFTFRONT     : lambda port, payload: self.process_vlc(port, payload, self.vlc_writers.get(port)),
             hl2ss.StreamPort.RM_VLC_LEFTLEFT      : lambda port, payload: self.process_vlc(port, payload, self.vlc_writers.get(port)),
@@ -131,60 +142,8 @@ class CACTI_DATASET_STREAM_WRITER():
             print(f"Started streaming data from port '{port}' for '{hl2ss.get_port_name(port)}'")
             
     """
-    Process Streams -----------------------------------------------------------------------------------
+    Audio Worker ----------------------------------------------------------------------------------------
     """
-    def process_streams(self):
-        start_time = time.time()
-        try:
-            while (self.enable):
-                for port in self.ports:
-                    _, data = self.sinks[port].get_most_recent_frame()
-                    if (data is not None):
-                        self.writer_map[port](port, data.payload)
-
-                if(time.time() - start_time > 10):
-                    self.enable = False
-
-        finally:
-            # Write audio
-            self.write_audio()
-            
-            # Cleanup ----------------------------------------------------------
-            # Release video writers
-            for writer in self.vlc_writers.values():
-                if writer is not None:
-                    writer.release()
-            print("Released all video writers")
-
-            # Stop streams
-            for port in self.ports:
-                self.sinks[port].detach()
-                self.producer.stop(port)
-                print(f'Stopped {port}')
-                
-            self.audio_queue.put(b'')
-            self.thread.join()
-            
-    def process_vlc(self, port, payload, writer):
-        if (payload.image is not None and payload.image.size > 0):
-            if writer is not None:
-                try:
-                    # Rotate image for correct orientation based on camera port 
-                    image_corrected = cv2.rotate(payload.image, hl2ss_3dcv.rm_vlc_get_rotation(port))
-
-                    # Convert image to RGB
-                    frame = hl2ss_3dcv.rm_vlc_to_rgb(image_corrected)
-
-                    # Write frame to writer
-                    writer.write(frame)
-                    
-                except Exception as e:
-                    print(f"Error writing VLC frame for '{port}'! Details: {e}")
-        
-    def process_mic(self, port, payload):
-        audio_bits = hl2ss_utilities.microphone_planar_to_packed(payload) if (self.mic_profile != hl2ss.AudioProfile.RAW) else payload
-        self.audio_queue.put(audio_bits.tobytes())
-        
     def audio_worker(self, audio_queue):
         while (self.enable):
             self.mic_frames.append(audio_queue.get())
@@ -224,6 +183,9 @@ class CACTI_DATASET_STREAM_WRITER():
         
         return writers
 
+    """
+    Write Audio ----------------------------------------------------------------------------------------
+    """
     def write_audio(self):
         # Save the recorded data as a WAV file
         for port, directory in self.dir_map.items():
@@ -238,6 +200,65 @@ class CACTI_DATASET_STREAM_WRITER():
     
     def set_timestamp(self):
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    """
+    Process Streams -----------------------------------------------------------------------------------
+    """
+    def process_streams(self):
+        start_time = time.time()
+        try:
+            while (self.enable):
+                for port in self.ports:
+                    self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
+                    if (data is not None and self.frame_stamp[port].CURRENT != self.frame_stamp[port].PREVIOUS):
+                        self.writer_map[port](port, data.payload)
+                        self.frame_stamp[port].PREVIOUS = self.frame_stamp[port].CURRENT
+
+                if(time.time() - start_time > 10):
+                    self.enable = False
+
+        finally:
+            # Write audio
+            self.write_audio()
+            
+            # Cleanup ----------------------------------------------------------
+            # Release video writers
+            for writer in self.vlc_writers.values():
+                if writer is not None:
+                    writer.release()
+            print("Released all video writers")
+
+            # Stop streams
+            for port in self.ports:
+                self.sinks[port].detach()
+                self.producer.stop(port)
+                print(f'Stopped {port}')
+                
+            self.audio_queue.put(b'')
+            self.thread.join()
+
+    """
+    Process VLC ----------------------------------------------------------------------------------------
+    """
+    def process_vlc(self, port, payload, writer):
+        if (payload.image is not None and payload.image.size > 0):
+            if writer is not None:
+                try:
+                    # Rotate image for correct orientation based on camera port 
+                    image_corrected = cv2.rotate(payload.image, hl2ss_3dcv.rm_vlc_get_rotation(port))
+
+                    # Convert image to RGB
+                    frame = hl2ss_3dcv.rm_vlc_to_rgb(image_corrected)
+
+                    # Write frame to writer
+                    writer.write(frame)
+                    
+                except Exception as e:
+                    print(f"Error writing VLC frame for '{port}'! Details: {e}")
+                    
+    def process_mic(self, port, payload):
+        audio_bits = hl2ss_utilities.microphone_planar_to_packed(payload) if (self.mic_profile != hl2ss.AudioProfile.RAW) else payload
+        self.audio_queue.put(audio_bits.tobytes())
 
         
 def main():
@@ -258,6 +279,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
-
-

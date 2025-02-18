@@ -8,10 +8,9 @@ from pynput import keyboard
 import multiprocessing as mp
 import numpy as np
 import cv2
-import hl2ss_imshow
-import hl2ss
-import hl2ss_lnm
-import hl2ss_mp
+from viewer import hl2ss
+from viewer import hl2ss_lnm
+from viewer import hl2ss_mp
 import os
 from datetime import datetime
 import time
@@ -19,7 +18,7 @@ from viewer import hl2ss_3dcv
 # Settings --------------------------------------------------------------------
 
 # HoloLens address
-host = '192.168.0.22'
+host = '192.168.11.33'
 
 # Video output settings
 output_dir = 'recorded_videos'
