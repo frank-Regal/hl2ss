@@ -13,34 +13,35 @@ import hl2ss
 import hl2ss_lnm
 import hl2ss_mp
 import hl2ss_utilities
+import time
 
 # Settings --------------------------------------------------------------------
 
 # HoloLens address
-host = '192.168.1.7'
+host = '192.168.50.33'
 
 # Output directory
-path = './data'
+path = 'recorded_videos'
 
 # Unpack to viewable formats (e.g., encoded video to mp4)
 unpack = True
 
 # Ports to record
 ports = [
-    #hl2ss.StreamPort.RM_VLC_LEFTFRONT,
-    #hl2ss.StreamPort.RM_VLC_LEFTLEFT,
-    #hl2ss.StreamPort.RM_VLC_RIGHTFRONT,
-    #hl2ss.StreamPort.RM_VLC_RIGHTRIGHT,
+    # hl2ss.StreamPort.RM_VLC_LEFTFRONT,
+    # hl2ss.StreamPort.RM_VLC_LEFTLEFT,
+    # hl2ss.StreamPort.RM_VLC_RIGHTFRONT,
+    # hl2ss.StreamPort.RM_VLC_RIGHTRIGHT,
     #hl2ss.StreamPort.RM_DEPTH_AHAT,
     #hl2ss.StreamPort.RM_DEPTH_LONGTHROW,
     #hl2ss.StreamPort.RM_IMU_ACCELEROMETER,
     #hl2ss.StreamPort.RM_IMU_GYROSCOPE,
     #hl2ss.StreamPort.RM_IMU_MAGNETOMETER,
-    hl2ss.StreamPort.PERSONAL_VIDEO,
-    #hl2ss.StreamPort.MICROPHONE,
+    #hl2ss.StreamPort.PERSONAL_VIDEO,
+    hl2ss.StreamPort.MICROPHONE
     #hl2ss.StreamPort.SPATIAL_INPUT,
     #hl2ss.StreamPort.EXTENDED_EYE_TRACKER,
-    hl2ss.StreamPort.EXTENDED_AUDIO,
+    # hl2ss.StreamPort.EXTENDED_AUDIO,
     ]
 
 # PV parameters
@@ -60,24 +61,25 @@ if __name__ == '__main__':
     if ((hl2ss.StreamPort.RM_DEPTH_LONGTHROW in ports) and (hl2ss.StreamPort.RM_DEPTH_AHAT in ports)):
         print('Error: Simultaneous RM Depth Long Throw and RM Depth AHAT streaming is not supported. See known issues at https://github.com/jdibenes/hl2ss.')
         quit()
-
+    start_time = time.time()
     # Keyboard events ---------------------------------------------------------
     start_event = threading.Event()
     stop_event = threading.Event()
 
-    def on_press(key):
-        global start_event
-        global stop_event
+    # def on_press(key):
+    #     global start_event
+    #     global stop_event
 
-        if (key == keyboard.Key.space):
-            start_event.set()
-        elif (key == keyboard.Key.esc):
-            stop_event.set()
+    #     if (key == keyboard.Key.space):
+    #         start_event.set()
+    #     elif (key == keyboard.Key.esc):
+    #         stop_event.set()
 
-        return not stop_event.is_set()
+    #     return not stop_event.is_set()
 
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
+    # listener = keyboard.Listener(on_press=on_press)
+    # listener.start()
+
 
     # Start PV Subsystem if PV is selected ------------------------------------
     if (hl2ss.StreamPort.PERSONAL_VIDEO in ports):
@@ -105,21 +107,33 @@ if __name__ == '__main__':
         producer.start(port)
 
     # Wait for start signal ---------------------------------------------------
-    print('Press space to start recording...')
-    start_event.wait()
+    # print('Press space to start recording...')
+    # start_event.wait()
+    delay = 3
+    while(time.time() - start_time < delay):
+        remaining = int(delay - (time.time() - start_time))
+        print(f'Starting in {remaining} seconds...', end='\r')
+
+
+    start_event.set()
     print('Preparing...')
 
     # Start writers -----------------------------------------------------------
     filenames = {port : os.path.join(path, f'{hl2ss.get_port_name(port)}.bin') for port in ports}
     writers = {port : hl2ss_utilities.wr_process_producer(filenames[port], producer, port, 'hl2ss simple recorder'.encode()) for port in ports}
-    
+
     for port in ports:
         writers[port].start()
 
     # Wait for stop signal ----------------------------------------------------
     print('Recording started.')
-    print('Press esc to stop recording...')
-    stop_event.wait()
+    recording_time = time.time()
+
+    while(time.time() - recording_time < 10):
+        remaining = int(10 - (time.time() - recording_time))
+        print(f'Recording for {remaining} seconds...', end='\r')
+
+    # stop_event.wait()
     print('Stopping...')
 
     # Stop writers and receivers ----------------------------------------------
@@ -136,8 +150,8 @@ if __name__ == '__main__':
     if (hl2ss.StreamPort.PERSONAL_VIDEO in ports):
         hl2ss_lnm.stop_subsystem_pv(host, hl2ss.StreamPort.PERSONAL_VIDEO)
 
-    # Stop keyboard events ----------------------------------------------------
-    listener.join()
+    # # Stop keyboard events ----------------------------------------------------
+    # listener.join()
 
     # Quit if binaries are not to be unpacked ---------------------------------
     if (not unpack):
@@ -147,18 +161,18 @@ if __name__ == '__main__':
 
     # Unpack encoded video streams to a single MP4 file -----------------------
     ports_to_mp4 = [
-        hl2ss.StreamPort.PERSONAL_VIDEO,
+        # hl2ss.StreamPort.PERSONAL_VIDEO,
         hl2ss.StreamPort.MICROPHONE,
-        hl2ss.StreamPort.EXTENDED_AUDIO,
-        hl2ss.StreamPort.RM_VLC_LEFTFRONT,
-        hl2ss.StreamPort.RM_VLC_LEFTLEFT,
-        hl2ss.StreamPort.RM_VLC_RIGHTFRONT,
-        hl2ss.StreamPort.RM_VLC_RIGHTRIGHT,
-        hl2ss.StreamPort.RM_DEPTH_AHAT,        
+        # hl2ss.StreamPort.EXTENDED_AUDIO,
+        # hl2ss.StreamPort.RM_VLC_LEFTFRONT,
+        # hl2ss.StreamPort.RM_VLC_LEFTLEFT,
+        # hl2ss.StreamPort.RM_VLC_RIGHTFRONT,
+        # hl2ss.StreamPort.RM_VLC_RIGHTRIGHT,
+        # hl2ss.StreamPort.RM_DEPTH_AHAT,
     ]
 
     mp4_input_filenames = [filenames[port] for port in ports_to_mp4 if (port in ports)]
-    mp4_output_filename = os.path.join(path, 'video.mp4')
+    mp4_output_filename = os.path.join(path, 'audio.mp4')
 
     if (len(mp4_input_filenames) > 0):
         hl2ss_utilities.unpack_to_mp4(mp4_input_filenames, mp4_output_filename)

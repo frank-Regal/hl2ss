@@ -16,7 +16,7 @@ import hl2ss_mp
 # Settings --------------------------------------------------------------------
 
 # HoloLens address
-host = '192.168.1.7'
+host = '192.168.50.33'
 
 # Ports
 ports = [
@@ -25,14 +25,14 @@ ports = [
     hl2ss.StreamPort.RM_VLC_RIGHTFRONT,
     hl2ss.StreamPort.RM_VLC_RIGHTRIGHT,
     #hl2ss.StreamPort.RM_DEPTH_AHAT,
-    hl2ss.StreamPort.RM_DEPTH_LONGTHROW,
-    hl2ss.StreamPort.PERSONAL_VIDEO,
-    hl2ss.StreamPort.RM_IMU_ACCELEROMETER,
-    hl2ss.StreamPort.RM_IMU_GYROSCOPE,
-    hl2ss.StreamPort.RM_IMU_MAGNETOMETER,
-    hl2ss.StreamPort.MICROPHONE,
-    hl2ss.StreamPort.SPATIAL_INPUT,
-    hl2ss.StreamPort.EXTENDED_EYE_TRACKER,
+    # hl2ss.StreamPort.RM_DEPTH_LONGTHROW,
+    # hl2ss.StreamPort.PERSONAL_VIDEO,
+    # hl2ss.StreamPort.RM_IMU_ACCELEROMETER,
+    # hl2ss.StreamPort.RM_IMU_GYROSCOPE,
+    # hl2ss.StreamPort.RM_IMU_MAGNETOMETER,
+    # hl2ss.StreamPort.MICROPHONE,
+    # hl2ss.StreamPort.SPATIAL_INPUT,
+    # hl2ss.StreamPort.EXTENDED_EYE_TRACKER,
     ]
 
 # PV parameters
@@ -100,8 +100,8 @@ if __name__ == '__main__':
         sinks[port].get_attach_response()
         while (sinks[port].get_buffered_frame(0)[0] != 0):
             pass
-        print(f'Started {port}')        
-        
+        print(f'Started {port}')
+
     # Create Display Map ------------------------------------------------------
     def display_pv(port, payload):
         if (payload.image is not None and payload.image.size > 0):
