@@ -1,6 +1,6 @@
 
 import numpy as np
-import hl2ss
+from viewer import hl2ss
 import hl2ss_ulm_stream
 
 

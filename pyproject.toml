@@ -18,7 +18,8 @@ dependencies = [
     "opencv-python",
     "av",
     "pynput",
-    "open3d"
+    "open3d",
+    "pyaudio"
 ]
 
 [project.urls]
