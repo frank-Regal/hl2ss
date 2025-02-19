@@ -10,6 +10,8 @@ import multiprocessing as mp
 import numpy as np
 import cv2
 import rospy
+from std_msgs.msg import Empty
+
 from viewer import hl2ss_mp
 from viewer import hl2ss_lnm
 from viewer import hl2ss
@@ -69,15 +71,15 @@ class CACTI_DATASET_STREAM_WRITER():
         # Configure Streams
         self.configure_streams()
         
-        # Initialize VLC Writers
-        self.vlc_writers = self.create_vlc_writers()
-        
         # Initialize Utilities --------------------------------------------------------------------------
         self.buffer_elements = 150    # Maximum number of frames in buffer
         self.manager = mp.Manager()   # Manager for shared memory
         self.sinks = {}               # Sinks for each port
-        self.enable = True
+        self.record = False
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.is_writing_audio = False
+        self.wrote_audio = True
+        self.vlc_writers = {}
         
         # Initialize Frame Stamp Map to ensure no duplicate frames are written to disk
         self.frame_stamp = {
@@ -171,7 +173,7 @@ class CACTI_DATASET_STREAM_WRITER():
                 writers[port] = cv2.VideoWriter(filename,                                                   
                     cv2.VideoWriter_fourcc('m','p','4','v'), # MPEG-4 codec
                     self.vlc_fps,                            # 30 FPS
-                    (self.vlc_height, self.vlc_width))       # 480, 640
+                    (self.vlc_height, self.vlc_width))       # 480, 640 (this is the order of the dimensions and the frame is rotated before written)
 
                 print(f"Created video writer for '{port}'")
         
@@ -197,8 +199,13 @@ class CACTI_DATASET_STREAM_WRITER():
     Audio Worker ----------------------------------------------------------------------------------------
     """
     def audio_worker(self, audio_queue):
-        while (self.enable):
+        while (self.record):
             self.mic_frames.append(audio_queue.get())
+            print(f"Getting audio frame")
+            self.is_recording_audio = True
+            self.wrote_audio = False
+            
+        self.is_recording_audio = False
 
     """
     Write Audio ----------------------------------------------------------------------------------------
@@ -214,7 +221,11 @@ class CACTI_DATASET_STREAM_WRITER():
                     wave_file.setframerate(self.mic_sample_rate)
                     wave_file.writeframes(b''.join(self.mic_frames))
                     print(f"Audio saved to {filename}")
-    
+                    
+                # Clear the audio frames
+                self.mic_frames.clear()
+                self.wrote_audio = True
+
     def set_timestamp(self):
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     
@@ -248,27 +259,32 @@ class CACTI_DATASET_STREAM_WRITER():
     Process Streams -----------------------------------------------------------------------------------
     """
     def process_streams(self):
-        start_time = time.time()
         try:
-            while (self.enable):
-                for port in self.ports:
-                    self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
-                    if (data is not None and self.frame_stamp[port].CURRENT != self.frame_stamp[port].PREVIOUS):
-                        self.writer_map[port](port, data.payload)
-                        self.frame_stamp[port].PREVIOUS = self.frame_stamp[port].CURRENT
-
-                if(time.time() - start_time > 10):
-                    self.enable = False
-
+            while not rospy.is_shutdown():
+                if (self.record):
+                    # Initialize VLC Writers
+                    if (len(self.vlc_writers) == 0):
+                        self.vlc_writers = self.create_vlc_writers()
+                    
+                    # Grab Data
+                    for port in self.ports:
+                        self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
+                        if (data is not None and self.frame_stamp[port].CURRENT != self.frame_stamp[port].PREVIOUS):
+                            self.writer_map[port](port, data.payload)
+                            self.frame_stamp[port].PREVIOUS = self.frame_stamp[port].CURRENT
+                else:
+                    # Write audio
+                    if (self.wrote_audio == False and self.is_recording_audio == False):
+                        self.write_audio()
+                    
+                    # Release video writers
+                    for writer in self.vlc_writers.values():
+                        if writer is not None:
+                            writer.release()
+                    self.vlc_writers = {}
         finally:
-            # Write audio
-            self.write_audio()
-            
             # Cleanup ----------------------------------------------------------
-            # Release video writers
-            for writer in self.vlc_writers.values():
-                if writer is not None:
-                    writer.release()
+
             print("Released all video writers")
 
             # Stop streams
@@ -280,6 +296,14 @@ class CACTI_DATASET_STREAM_WRITER():
             self.client_rc.close()   
             self.audio_queue.put(b'')
             self.thread.join()
+            
+    def start_callback(self, msg):
+        self.record = True
+        print("Recording ...")
+
+    def stop_callback(self, msg):
+        self.record = False
+        print("Stopped recording.")
 
 
 def main():
@@ -294,6 +318,10 @@ def main():
     
     # Initialize Streamer
     stream_writer = CACTI_DATASET_STREAM_WRITER(host, dataset_path)
+    
+    # Create subscribers
+    rospy.Subscriber('/hri_cacti/dataset_capture/start', Empty, stream_writer.start_callback)
+    rospy.Subscriber('/hri_cacti/dataset_capture/stop', Empty, stream_writer.stop_callback)
     
     # Process Streams
     stream_writer.process_streams()
