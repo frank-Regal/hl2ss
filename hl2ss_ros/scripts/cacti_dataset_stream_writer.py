@@ -10,7 +10,7 @@ import multiprocessing as mp
 import numpy as np
 import cv2
 import rospy
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String
 
 from viewer import hl2ss_mp
 from viewer import hl2ss_lnm
@@ -25,7 +25,7 @@ class FRAMESTAMP:
     PREVIOUS = None
 
 class CACTI_DATASET_STREAM_WRITER():
-    def __init__(self, host, dataset_path):
+    def __init__(self, host, output_dir, file_prefix="", file_postfix=""):
 
         # Initialize producer
         self.producer = hl2ss_mp.producer()
@@ -50,7 +50,9 @@ class CACTI_DATASET_STREAM_WRITER():
         ]
 
         # Create Output Directory
-        self.dir_map = self.create_output_directories(dataset_path)
+        self.dir_map = self.create_output_directories(output_dir)
+        self.file_prefix = file_prefix
+        self.file_postfix = file_postfix
 
         # Define VLC Stream Settings --------------------------------------------------------------------
         self.vlc_mode = hl2ss.StreamMode.MODE_0             # Mode 0 (Video Only)
@@ -161,6 +163,39 @@ class CACTI_DATASET_STREAM_WRITER():
         return dir_map
 
     """
+    Create Filename --------------------------------------------------------------------------------
+    """
+    def create_filename(self, directory, prefix="", postfix="", filetype=""):
+        # Start with empty filename
+        filename = ""
+
+        # Add prefix if it exists
+        if prefix:
+            filename += f"{prefix}"
+
+        # Add timestamp
+        filename += self.timestamp
+
+        # Add postfix if it exists
+        if postfix:
+            filename += f"{postfix}"
+
+        # Add filetype if it exists
+        if filetype:
+            # Add dot only if filetype doesn't already have one
+            if not filetype.startswith('.'):
+                filename += "."
+            filename += filetype
+
+        # Join with directory
+        full_path = os.path.join(directory, filename)
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        return full_path
+
+    """
     Create VLC Writers --------------------------------------------------------------------------------
     """
     def create_vlc_writers(self):
@@ -170,7 +205,7 @@ class CACTI_DATASET_STREAM_WRITER():
         for port, directory in self.dir_map.items():
             if (port != hl2ss.StreamPort.MICROPHONE):
                 # Configure file name with timestamp
-                filename = f'{directory}/{self.timestamp}.mp4'
+                filename = self.create_filename(directory, prefix=self.file_prefix, postfix=self.file_postfix, filetype=".mp4")
 
                 # Configure video writer based on stream type
                 writers[port] = cv2.VideoWriter(filename,
@@ -215,7 +250,7 @@ class CACTI_DATASET_STREAM_WRITER():
             # Save the recorded data as a WAV file
             for port, directory in self.dir_map.items():
                 if (port == hl2ss.StreamPort.MICROPHONE):
-                    filename = f'{directory}/{self.timestamp}.wav'
+                    filename = self.create_filename(directory, prefix=self.file_prefix, postfix=self.file_postfix, filetype=".wav")
                     with wave.open(filename, 'wb') as wave_file:
                         wave_file.setnchannels(self.mic_channels)
                         wave_file.setsampwidth(2 if self.mic_format == pyaudio.paInt16 else 4)
@@ -308,9 +343,24 @@ class CACTI_DATASET_STREAM_WRITER():
             # Wait for audio worker to terminate
             self.thread.join()
 
+    """
+    Start Callback ------------------------------------------------------------------------------------
+    """
     def start_callback(self, msg):
         self.record = True
         print("Recording ...")
+
+    """
+    Start Callback Class ------------------------------------------------------------------------------
+    """
+    def start_callback_class(self, msg):
+        self.record = True
+        self.file_prefix += f"{msg.data}/"
+        print("Recording ...")
+
+    """
+    Stop Callback -------------------------------------------------------------------------------------
+    """
 
     def stop_callback(self, msg):
         self.record = False
@@ -323,16 +373,19 @@ def main():
 
     # Get host parameter from ROS parameter server, default to localhost if not set
     host = rospy.get_param('~host', '192.168.0.33')
-    dataset_path = rospy.get_param('~dataset_path', '/project/ws_dev/src/hl2ss/hl2ss_ros/dataset') # no trailing slash
+    output_dir = rospy.get_param('~output_dir', '/project/ws_dev/src/hl2ss/hl2ss_ros/dataset') # no trailing slash
+    file_prefix = rospy.get_param('~file_prefix', '')
+    file_postfix = rospy.get_param('~file_postfix', '')
     print(f"Connecting client to HoloLens at: '{host}'")
-    print(f"Dataset will be saved to: '{dataset_path}'")
+    print(f"Dataset will be saved to: '{output_dir}'")
 
     # Initialize Streamer
-    stream_writer = CACTI_DATASET_STREAM_WRITER(host, dataset_path)
+    stream_writer = CACTI_DATASET_STREAM_WRITER(host, output_dir, file_prefix, file_postfix)
 
     # Create subscribers
     rospy.Subscriber('/hri_cacti/dataset_capture/start', Empty, stream_writer.start_callback)
     rospy.Subscriber('/hri_cacti/dataset_capture/stop', Empty, stream_writer.stop_callback)
+    rospy.Subscriber('/hri_cacti/dataset_capture/start/class', String, stream_writer.start_callback_class)
 
     # Process Streams
     stream_writer.process_streams()
