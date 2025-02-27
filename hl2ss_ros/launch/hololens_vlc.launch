@@ -1,5 +1,5 @@
 <launch>
-  <arg name="device" default="192.168.11.33"/>
+  <arg name="device" default="192.168.0.22"/>
   <arg name="ag_n" default="0"/>
   <node name="hololens_vlc_node_ag$(arg ag_n)" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
     <param name="host" value="$(arg device)"/>
@@ -7,13 +7,13 @@
     RM_VLC_LEFTFRONT     = 3800
     RM_VLC_LEFTLEFT      = 3801
     RM_VLC_RIGHTFRONT    = 3802
-    RM_VLC_RIGHTRIGHT    = 3803 
+    RM_VLC_RIGHTRIGHT    = 3803
     -->
     <param name="port" value="3802"/>
     <!-- Stream Operating Mode
     0: Device data (e.g. video)
     1: Device data + location data (e.g. video + camera pose)
-    2: Device constants (e.g. camera intrinsics) 
+    2: Device constants (e.g. camera intrinsics)
     -->
     <param name="mode" value="1"/>
     <param name="divisor" value="1"/>
