@@ -30,5 +30,6 @@ catkin_install_python(PROGRAMS
   scripts/sample_uv_to_3d_vlc.py
   scripts/cacti_dataset_stream_writer.py
   scripts/cacti_test.py
+  scripts/tf_republisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

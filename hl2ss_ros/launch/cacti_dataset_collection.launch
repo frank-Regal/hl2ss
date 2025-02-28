@@ -3,8 +3,8 @@
 
 <arg name="host" default="192.168.11.33" /> <!-- IP address of the HoloLens -->
 <arg name="output_dir" default="/project/ws_dev/src/hl2ss/hl2ss_ros/dataset" /> <!-- no trailing slash -->
-<arg name="file_prefix" default="" />
-<arg name="file_postfix" default="" />
+<arg name="file_prefix" default="outdoor/people/sleeve/" /> <!-- no leading slash. Only add post slash if you want to create a folder -->
+<arg name="file_postfix" default="advance" />
 
 <node pkg="hl2ss_ros" type="cacti_dataset_stream_writer.py" name="cacti_dataset_stream_writer" output="screen">
     <param name="host" type="str" value="$(arg host)" />

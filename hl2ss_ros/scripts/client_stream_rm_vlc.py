@@ -40,23 +40,23 @@ class HoloLensVLCNode:
         # Publishers
         self.image_pub = rospy.Publisher(f'hololens_ag{self.ag_n}/vlc_image', Image, queue_size=10)
         # self.pose_pub = rospy.Publisher('hololens/vlc_pose', PoseStamped, queue_size=10)
-        self.tf_pub = rospy.Publisher(f'tf', TFMessage, queue_size=10)
+        self.tf_pub = rospy.Publisher(f'/tf', TFMessage, queue_size=10)
 
         self.tf_msg = TFMessage()
-        self.extrinsics = np.array([[-0.998577,    0.05308131, -0.00513458,  0.        ],
-             [-0.05296633, -0.9983878,  -0.0204043,   0.        ],
-             [-0.00620939, -0.02010331,  0.9997786,   0.        ],
-             [-0.00279547, -0.09953252, -0.00105577,  1.        ]])
-        self.extrinsics = np.linalg.inv(self.extrinsics)
+        rf_extrinsics = np.array([[-0.998577,    0.05308131, -0.00513458,  0.        ],
+                                  [-0.05296633, -0.9983878,  -0.0204043,   0.        ],
+                                  [-0.00620939, -0.02010331,  0.9997786,   0.        ],
+                                  [-0.00279547, -0.09953252, -0.00105577,  1.        ]])
+        rr_extrinsics = np.array([[ 0.9958912,   0.08903051,  0.01656139,  0.        ],
+                                  [-0.03229338,  0.520009,   -0.85355014,  0.        ],
+                                  [-0.08460408,  0.8495082,   0.5207474,   0.        ],
+                                  [-0.0076595,   0.06369451, -0.08886004,  1.        ]])
+        self.camera_to_rignode = np.linalg.inv(rf_extrinsics.transpose())
         self.bridge = CvBridge()
         self.client = None
         self.log_info = False
 
     def start(self):
-        if self.mode == hl2ss.StreamMode.MODE_2:
-            self.query_calibration()
-            return
-
         self.client = hl2ss_lnm.rx_rm_vlc(self.host, self.port, mode=self.mode, divisor=self.divisor, profile=self.profile)
         self.client.open()
 
@@ -80,14 +80,11 @@ class HoloLensVLCNode:
 
         # Publish pose if available
         if self.mode == hl2ss.StreamMode.MODE_1:
+
             # Convert data.pose to pose_msg.pose
             camera_to_world = data.pose.transpose() # transpose to convert to column-major order
             camera_to_world_t, camera_to_world_r = self.convert_to_ros(camera_to_world)
             self.append_tf_msg(camera_to_world_t, camera_to_world_r, 'world', f'{hl2ss.get_port_name(self.port)}', rospy.Time.now())
-
-            camera_to_rignode = self.extrinsics
-            camera_to_rignode_t, camera_to_rignode_r = self.convert_to_ros(camera_to_rignode)
-            self.append_tf_msg(camera_to_rignode_t, camera_to_rignode_r, f'{hl2ss.get_port_name(self.port)}', 'rignode', rospy.Time.now())
 
             self.tf_pub.publish(self.tf_msg)
             self.tf_msg.transforms.clear()
@@ -99,13 +96,31 @@ class HoloLensVLCNode:
         # rospy.loginfo(f'Exposure: {data.payload.exposure}')
         # rospy.loginfo(f'Gain: {data.payload.gain}')
 
-    def convert_to_ros(self, transform):
+    def convert_to_ros(self, transform, rotate=True):
         # - handle translation
         translation = self.hl2ss_to_ros_translation(transform[:3, 3]) # convert from HL2SS to ROS convention
         # - handle rotation
         rotation = self.hl2ss_to_ros_rotation(transform[:3, :3]) # make quaternion and convert to ROS convention
+        if rotate:
+            rotation = self.rotate_about_axis(rotation, -90, axis='x', frame='body')
+            rotation = self.rotate_about_axis(rotation, 180, axis='z', frame='body')
+        r = np.eye(4)
+        r[:3, :3] = rotation
+        orientation = quaternion_from_matrix(r)
+        return translation, orientation
+
+    def convert_to_extrinsics_ros(self, transform):
+
+        rotation = transform[:3, :3]
+        rotation = self.rotate_about_axis(rotation, 180, axis='x', frame='body')
+        # - handle translation
+        translation = self.hl2ss_to_ros_translation(transform[:3, 3]) # convert from HL2SS to ROS convention
+        # - handle rotation
+        rotation = self.hl2ss_to_ros_rotation(rotation) # make quaternion and convert to ROS convention
         rotation = self.rotate_about_axis(rotation, -90, axis='x', frame='body')
         rotation = self.rotate_about_axis(rotation, 180, axis='z', frame='body')
+
+
         r = np.eye(4)
         r[:3, :3] = rotation
         orientation = quaternion_from_matrix(r)
@@ -186,10 +201,13 @@ class HoloLensVLCNode:
         rospy.loginfo(data.undistort_map)
         rospy.loginfo('Intrinsics (undistorted only)')
         rospy.loginfo(data.intrinsics)
+        quit()
 
 if __name__ == '__main__':
     try:
         node = HoloLensVLCNode()
+        if node.mode == hl2ss.StreamMode.MODE_2:
+            node.query_calibration()
         node.start()
     except rospy.ROSInterruptException:
         pass
