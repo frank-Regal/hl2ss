@@ -31,5 +31,6 @@ catkin_install_python(PROGRAMS
   scripts/cacti_dataset_stream_writer.py
   scripts/cacti_test.py
   scripts/tf_republisher.py
+  scripts/tf_static_publishers.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
