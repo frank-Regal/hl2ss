@@ -1,16 +1,22 @@
 <?xml version="1.0"?>
 <launch>
 
-<arg name="host" default="192.168.11.33" /> <!-- IP address of the HoloLens -->
+<arg name="host" default="192.168.11.223" /> <!-- IP address of the HoloLens -->
 <arg name="output_dir" default="/project/ws_dev/src/hl2ss/hl2ss_ros/dataset" /> <!-- no trailing slash -->
-<arg name="file_prefix" default="outdoor/people/sleeve/" /> <!-- no leading slash. Only add post slash if you want to create a folder -->
-<arg name="file_postfix" default="advance" />
+<arg name="setting" default="outdoor" />
+<arg name="condition" default="people" />
+<arg name="experiment" default="sleeve" />
+<arg name="participant" default="1" />
+<arg name="classname" default="" />
 
 <node pkg="hl2ss_ros" type="cacti_dataset_stream_writer.py" name="cacti_dataset_stream_writer" output="screen">
     <param name="host" type="str" value="$(arg host)" />
     <param name="output_dir" type="str" value="$(arg output_dir)" />
-    <param name="file_prefix" type="str" value="$(arg file_prefix)" />
-    <param name="file_postfix" type="str" value="$(arg file_postfix)" />
+    <param name="setting" type="str" value="$(arg setting)" />
+    <param name="condition" type="str" value="$(arg condition)" />
+    <param name="experiment" type="str" value="$(arg experiment)" />
+    <param name="participant" type="str" value="$(arg participant)" />  
+    <param name="classname" type="str" value="$(arg classname)" />
 </node>
 
 </launch>

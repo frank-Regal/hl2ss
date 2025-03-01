@@ -25,7 +25,8 @@ class FRAMESTAMP:
     PREVIOUS = None
 
 class CACTI_DATASET_STREAM_WRITER():
-    def __init__(self, host, output_dir, file_prefix="", file_postfix=""):
+    def __init__(self, host, output_dir, 
+                 setting="", condition="", experiment="", participant="", classname=""):
 
         # Initialize producer
         self.producer = hl2ss_mp.producer()
@@ -50,9 +51,13 @@ class CACTI_DATASET_STREAM_WRITER():
         ]
 
         # Create Output Directory
-        self.dir_map = self.create_output_directories(output_dir)
-        self.file_prefix = file_prefix
-        self.file_postfix = file_postfix
+        # self.dir_map = self.create_output_directories(output_dir)
+        self.output_dir = output_dir
+        self.setting = setting
+        self.condition = condition
+        self.experiment = experiment
+        self.participant = f"participant_{participant}"
+        self.classname = classname
 
         # Define VLC Stream Settings --------------------------------------------------------------------
         self.vlc_mode = hl2ss.StreamMode.MODE_0             # Mode 0 (Video Only)
@@ -150,35 +155,16 @@ class CACTI_DATASET_STREAM_WRITER():
             print(f"Initialized port '{port}' to stream '{hl2ss.get_port_name(port)}' sensor data.")
 
     """
-    Create Output Directory ----------------------------------------------------------------------------
-    """
-    def create_output_directories(self, output_dir):
-        dir_map = {}
-        for port in self.ports:
-            port_name = hl2ss.get_port_name(port)
-            directory = os.path.join(output_dir, port_name)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            dir_map[port] = directory
-        return dir_map
-
-    """
     Create Filename --------------------------------------------------------------------------------
     """
-    def create_filename(self, directory, prefix="", postfix="", filetype=""):
+    def create_filename(self, port, filetype=""):
         # Start with empty filename
         filename = ""
-
-        # Add prefix if it exists
-        if prefix:
-            filename += f"{prefix}"
+        
+        filename = f"{self.setting}_{self.condition}_{self.experiment}_{self.participant}_{self.classname}_{port}_"
 
         # Add timestamp
         filename += self.timestamp
-
-        # Add postfix if it exists
-        if postfix:
-            filename += f"{postfix}"
 
         # Add filetype if it exists
         if filetype:
@@ -188,7 +174,7 @@ class CACTI_DATASET_STREAM_WRITER():
             filename += filetype
 
         # Join with directory
-        full_path = os.path.join(directory, filename)
+        full_path = os.path.join(self.output_dir, self.setting, self.condition, self.experiment, self.participant, filename)
 
         # Ensure directory exists
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -202,10 +188,11 @@ class CACTI_DATASET_STREAM_WRITER():
         writers = {}
         self.set_timestamp() # call this here because it is the first instance of the timestamp
 
-        for port, directory in self.dir_map.items():
+        # for port, directory in self.dir_map.items():
+        for port in self.ports:
             if (port != hl2ss.StreamPort.MICROPHONE):
                 # Configure file name with timestamp
-                filename = self.create_filename(directory, prefix=self.file_prefix, postfix=self.file_postfix, filetype=".mp4")
+                filename = self.create_filename(hl2ss.get_port_name(port), filetype=".mp4")
 
                 # Configure video writer based on stream type
                 writers[port] = cv2.VideoWriter(filename,
@@ -248,9 +235,10 @@ class CACTI_DATASET_STREAM_WRITER():
     def write_audio(self):
         try:
             # Save the recorded data as a WAV file
-            for port, directory in self.dir_map.items():
+            # for port, directory in self.dir_map.items():
+            for port in self.ports:
                 if (port == hl2ss.StreamPort.MICROPHONE):
-                    filename = self.create_filename(directory, prefix=self.file_prefix, postfix=self.file_postfix, filetype=".wav")
+                    filename = self.create_filename(hl2ss.get_port_name(port), filetype=".wav")
                     with wave.open(filename, 'wb') as wave_file:
                         wave_file.setnchannels(self.mic_channels)
                         wave_file.setsampwidth(2 if self.mic_format == pyaudio.paInt16 else 4)
@@ -355,7 +343,7 @@ class CACTI_DATASET_STREAM_WRITER():
     """
     def start_callback_class(self, msg):
         self.record = True
-        self.file_prefix += f"{msg.data}/"
+        self.classname = msg.data
         print("Recording ...")
 
     """
@@ -374,13 +362,24 @@ def main():
     # Get host parameter from ROS parameter server, default to localhost if not set
     host = rospy.get_param('~host', '192.168.0.33')
     output_dir = rospy.get_param('~output_dir', '/project/ws_dev/src/hl2ss/hl2ss_ros/dataset') # no trailing slash
-    file_prefix = rospy.get_param('~file_prefix', '')
-    file_postfix = rospy.get_param('~file_postfix', '')
+    setting = rospy.get_param('~setting', '')
+    condition = rospy.get_param('~condition', '')
+    experiment = rospy.get_param('~experiment', '')
+    participant = rospy.get_param('~participant', '')
+    classname = rospy.get_param('~classname', '')
+    
+    # Print out status
     print(f"Connecting client to HoloLens at: '{host}'")
     print(f"Dataset will be saved to: '{output_dir}'")
 
     # Initialize Streamer
-    stream_writer = CACTI_DATASET_STREAM_WRITER(host, output_dir, file_prefix, file_postfix)
+    stream_writer = CACTI_DATASET_STREAM_WRITER(host, 
+                                                output_dir, 
+                                                setting=setting, 
+                                                condition=condition, 
+                                                experiment=experiment, 
+                                                participant=participant, 
+                                                classname=classname)
 
     # Create subscribers
     rospy.Subscriber('/hri_cacti/dataset_capture/start', Empty, stream_writer.start_callback)
