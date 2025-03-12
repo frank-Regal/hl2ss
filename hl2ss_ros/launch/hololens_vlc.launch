@@ -9,13 +9,13 @@
     RM_VLC_RIGHTFRONT    = 3802
     RM_VLC_RIGHTRIGHT    = 3803
     -->
-    <param name="port" value="3803"/>
+    <param name="port" value="3802"/>
     <!-- Stream Operating Mode
     0: Device data (e.g. video)
     1: Device data + location data (e.g. video + camera pose)
     2: Device constants (e.g. camera intrinsics)
     -->
-    <param name="mode" value="2"/>
+    <param name="mode" value="1"/>
     <param name="divisor" value="1"/>
     <param name="profile" value="0"/>
     <param name="bitrate" value="None"/>
