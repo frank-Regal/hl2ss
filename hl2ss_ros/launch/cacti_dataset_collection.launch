@@ -3,11 +3,16 @@
 
 <arg name="host" default="192.168.11.223" /> <!-- IP address of the HoloLens -->
 <arg name="output_dir" default="/project/ws_dev/src/hl2ss/hl2ss_ros/dataset" /> <!-- no trailing slash -->
-<arg name="setting" default="outdoor" />
-<arg name="condition" default="people" />
-<arg name="experiment" default="sleeve" />
+
+<!--Change these on ever condition change-->
+<arg name="setting" default="Indoor" /> <!-- Outdoor, Indoor -->
+<arg name="condition" default="NP" /> <!-- NP,P -->
+<arg name="experiment" default="NS" /> <!-- NS,S -->
 <arg name="participant" default="1" />
-<arg name="classname" default="" />
+
+ 
+ <!-- leave blank by default-->
+<arg name="classname" default="" /> 
 
 <node pkg="hl2ss_ros" type="cacti_dataset_stream_writer.py" name="cacti_dataset_stream_writer" output="screen">
     <param name="host" type="str" value="$(arg host)" />

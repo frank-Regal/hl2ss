@@ -56,7 +56,7 @@ class CACTI_DATASET_STREAM_WRITER():
         self.setting = setting
         self.condition = condition
         self.experiment = experiment
-        self.participant = f"participant_{participant}"
+        self.participant = f"P00{participant}"
         self.classname = classname
 
         # Define VLC Stream Settings --------------------------------------------------------------------
@@ -160,6 +160,18 @@ class CACTI_DATASET_STREAM_WRITER():
     def create_filename(self, port, filetype=""):
         # Start with empty filename
         filename = ""
+
+        if port == "rm_vlc_leftfront":
+            port = "LF"
+        if port == "rm_vlc_leftleft":
+            port = "LL"
+        if port == "rm_vlc_rightfront":
+            port = "RF"
+        if port == "rm_vlc_rightright":
+            port = "RR"
+        if port == "microphone":
+            port = "MIC"
+        
         
         filename = f"{self.setting}_{self.condition}_{self.experiment}_{self.participant}_{self.classname}_{port}_"
 
@@ -174,7 +186,11 @@ class CACTI_DATASET_STREAM_WRITER():
             filename += filetype
 
         # Join with directory
-        full_path = os.path.join(self.output_dir, self.setting, self.condition, self.experiment, self.participant, filename)
+
+        condition = 'No_People' if self.condition == 'NP' else 'People'
+        experiment = 'No_Sleeve' if self.experiment == 'NS' else 'Sleeve'
+
+        full_path = os.path.join(self.output_dir, self.setting, condition, experiment, self.classname, filename)
 
         # Ensure directory exists
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
