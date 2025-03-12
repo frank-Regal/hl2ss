@@ -1,8 +1,11 @@
 <launch>
-  <arg name="device" default="192.168.11.33"/>
-  <arg name="ag_n" default="0"/>
-  <node name="hololens_vlc_node_ag$(arg ag_n)" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+  <arg name="device"           default="192.168.11.33"/>
+  <arg name="ag_n"             default="0"/>
+  <arg name="camera_info_path" default="file://$(find hl2ss_ros)/config/vlc_right_front_calibration_data.yaml"/> <!-- Must start with file:// -->
+
+  <node name="hl_vlc_camera_stream_ag$(arg ag_n)" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
     <param name="host" value="$(arg device)"/>
+
     <!-- port options:
     RM_VLC_LEFTFRONT     = 3800
     RM_VLC_LEFTLEFT      = 3801
@@ -10,6 +13,7 @@
     RM_VLC_RIGHTRIGHT    = 3803
     -->
     <param name="port" value="3802"/>
+
     <!-- Stream Operating Mode
     0: Device data (e.g. video)
     1: Device data + location data (e.g. video + camera pose)
@@ -19,5 +23,10 @@
     <param name="divisor" value="1"/>
     <param name="profile" value="0"/>
     <param name="bitrate" value="None"/>
+  </node>
+  <!-- Add camera info publisher -->
+  <node name="hl_vlc_camera_info_ag$(arg ag_n)" pkg="hl2ss_ros" type="camera_info_publisher" output="screen">
+    <param name="camera_info_path" value="$(arg camera_info_path)"/>
+    <param name="ag_n" value="$(arg ag_n)"/>
   </node>
 </launch>

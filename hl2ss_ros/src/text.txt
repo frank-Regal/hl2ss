@@ -1,0 +1,1 @@
+rosrun aruco_ros single /camera_info:=/hololens_ag0/camera_info /image:=/hololens_ag0/vlc_image _marker_id:=0  _marker_size:=0.10 _marker_frame:=/aruco_frame _camera_frame:=/hololens_ag0 _image_is_rectified:=false _reference_frame:=/world

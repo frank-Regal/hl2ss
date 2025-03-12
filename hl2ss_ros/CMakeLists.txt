@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   geometry_msgs
+  camera_info_manager
 )
 
 catkin_package(
@@ -21,6 +22,11 @@ catkin_package(
   INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/../viewer
 )
 
+add_executable(camera_info_publisher src/camera_info_publisher.cpp)
+target_link_libraries(camera_info_publisher
+  ${catkin_LIBRARIES}
+)
+
 catkin_install_python(PROGRAMS
   scripts/client_stream_rm_vlc.py
   scripts/client_stream_si.py
@@ -32,5 +38,6 @@ catkin_install_python(PROGRAMS
   scripts/cacti_test.py
   scripts/tf_republisher.py
   scripts/tf_static_publishers.py
+  scripts/camera_info_pub.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
