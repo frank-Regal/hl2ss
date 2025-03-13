@@ -39,5 +39,6 @@ catkin_install_python(PROGRAMS
   scripts/tf_republisher.py
   scripts/tf_static_publishers.py
   scripts/camera_info_pub.py
+  scripts/calibration_user_input.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

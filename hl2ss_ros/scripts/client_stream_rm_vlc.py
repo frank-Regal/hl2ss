@@ -73,41 +73,44 @@ class HoloLensVLCNode:
     # Process Frame
     # -----------------------------------------------------------------------------
     def process_frame(self):
-        data = self.client.get_next_packet()
+        try:
+            data = self.client.get_next_packet()
 
-        # Manipulate image
-        rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            # Manipulate image
+            rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
-        # Publish image
-        img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
-        img_msg.header.stamp = rospy.Time.now()
-        img_msg.header.frame_id =  f'{hl2ss.get_port_name(self.port)}'
-        self.image_pub.publish(img_msg)
+            # Publish image
+            img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
+            img_msg.header.stamp = rospy.Time.now()
+            img_msg.header.frame_id =  'vlc'
+            self.image_pub.publish(img_msg)
 
-        # Publish /tf if desired
-        if self.mode == hl2ss.StreamMode.MODE_1:
+            # Publish /tf if desired
+            if self.mode == hl2ss.StreamMode.MODE_1:
 
-            # Convert data.pose to pose_msg.pose
-            rignode_to_world = data.pose.transpose() # transpose to convert to column-major order
-            rignode_to_world_t, rignode_to_world_r = self.convert_to_ros(rignode_to_world)
+                # Convert data.pose to pose_msg.pose
+                rignode_to_world = data.pose.transpose() # transpose to convert to column-major order
+                rignode_to_world_t, rignode_to_world_r = self.convert_to_ros(rignode_to_world)
 
-            # Append to tf_msg
-            self.append_tf_msg(rignode_to_world_t,
-                               rignode_to_world_r,
-                               self.base_frame,
-                               self.frame_id,
-                               rospy.Time.now())
+                # Append to tf_msg
+                self.append_tf_msg(rignode_to_world_t,
+                                rignode_to_world_r,
+                                self.base_frame,
+                                self.frame_id,
+                                rospy.Time.now())
 
-            # Publish tf_msg
-            self.tf_pub.publish(self.tf_msg)
-            self.tf_msg.transforms.clear()
+                # Publish tf_msg
+                self.tf_pub.publish(self.tf_msg)
+                self.tf_msg.transforms.clear()
 
-        # Log info if configured
-        if self.log_info == False:
-            rospy.loginfo(f'Publishing VLC stream to topic "hololens_ag{self.ag_n}/vlc_image" ...')
-            self.log_info = True
+            # Log info if configured
+            if self.log_info == False:
+                rospy.loginfo(f'Publishing VLC stream to topic "hololens_ag{self.ag_n}/vlc_image" ...')
+                self.log_info = True
+        except Exception as e:
+            rospy.logerr(e)
+            pass
 
-    # -----------------------------------------------------------------------------
     # Convert HL2SS transform to ROS transform
     # -----------------------------------------------------------------------------
     def convert_to_ros(self, transform):
