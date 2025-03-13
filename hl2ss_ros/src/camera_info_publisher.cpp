@@ -1,6 +1,19 @@
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <camera_info_manager/camera_info_manager.h>
+#include <sensor_msgs/Image.h>
+
+// Global variables needed for callback
+ros::Publisher* info_pub_ptr;
+camera_info_manager::CameraInfoManager* camera_info_manager_ptr;
+
+void cameraInfoCallback(const sensor_msgs::Image::ConstPtr& msg) {
+    if (info_pub_ptr && camera_info_manager_ptr) {
+        sensor_msgs::CameraInfo camera_info = camera_info_manager_ptr->getCameraInfo();
+        camera_info.header = msg->header;  // Use same header as image
+        info_pub_ptr->publish(camera_info);
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -19,9 +32,11 @@ int main(int argc, char** argv)
 
     // Create publisher
     ros::Publisher info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_name, 10);
+    info_pub_ptr = &info_pub;
 
     // Setup camera info manager
     camera_info_manager::CameraInfoManager camera_info_manager(nh, camera_name, camera_info_path);
+    camera_info_manager_ptr = &camera_info_manager;
 
     //Load the calibration data
     camera_info_manager.loadCameraInfo(camera_info_path);
@@ -34,16 +49,12 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    ros::Rate rate(30); // 10 Hz
+    // Create subscriber after setting up globals
+    ros::Subscriber sub = nh.subscribe(camera_name + "/vlc_image", 10, &cameraInfoCallback);
+
     ROS_INFO_STREAM("Publishing VLC camera info to topic '" << topic_name << "'...");
 
-    while (ros::ok()) {
-        sensor_msgs::CameraInfo camera_info = camera_info_manager.getCameraInfo();
-        camera_info.header.stamp = ros::Time::now();
-
-        info_pub.publish(camera_info);
-        rate.sleep();
-    }
+    ros::spin();
 
     return 0;
 }

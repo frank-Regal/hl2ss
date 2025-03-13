@@ -48,7 +48,7 @@ class HoloLensVLCNode:
         # Init class variables
         self.tf_msg = TFMessage()
         self.bridge = CvBridge()
-        self.child_frame_id = f'{hl2ss.get_port_name(self.port)}'
+        self.frame_id = 'rignode'
         self.client = None
         self.log_info = False
 
@@ -81,6 +81,7 @@ class HoloLensVLCNode:
         # Publish image
         img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
         img_msg.header.stamp = rospy.Time.now()
+        img_msg.header.frame_id =  f'{hl2ss.get_port_name(self.port)}'
         self.image_pub.publish(img_msg)
 
         # Publish /tf if desired
@@ -94,7 +95,7 @@ class HoloLensVLCNode:
             self.append_tf_msg(rignode_to_world_t,
                                rignode_to_world_r,
                                self.base_frame,
-                               self.child_frame_id,
+                               self.frame_id,
                                rospy.Time.now())
 
             # Publish tf_msg
@@ -119,6 +120,9 @@ class HoloLensVLCNode:
         # Rotate about axis
         rotation = self.rotate_about_axis(rotation, -90, axis='x', frame='body')
         rotation = self.rotate_about_axis(rotation, 180, axis='z', frame='body')
+
+        # rotation = self.rotate_about_axis(rotation, -90, axis='y', frame='body')
+        # rotation = self.rotate_about_axis(rotation, 180, axis='z', frame='body')
 
         # Create 4x4 matrix
         r = np.eye(4)
