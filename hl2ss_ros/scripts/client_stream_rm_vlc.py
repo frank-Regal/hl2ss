@@ -22,6 +22,7 @@ import cv2
 import numpy as np
 from viewer import hl2ss
 from viewer import hl2ss_lnm
+from viewer import hl2ss_3dcv
 from enum import Enum
 
 class HoloLensVLCNode:
@@ -77,7 +78,7 @@ class HoloLensVLCNode:
             data = self.client.get_next_packet()
 
             # Manipulate image
-            rotated_image = cv2.rotate(data.payload.image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            rotated_image = cv2.rotate(data.payload.image, hl2ss_3dcv.rm_vlc_get_rotation(self.port))
 
             # Publish image
             img_msg = self.bridge.cv2_to_imgmsg(rotated_image, encoding="mono8")
