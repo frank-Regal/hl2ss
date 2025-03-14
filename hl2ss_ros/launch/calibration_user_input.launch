@@ -1,0 +1,9 @@
+<launch>
+  <!-- Set filename for calibration data -->
+  <arg name="filename" default="calibration_data"/>
+
+  <!-- Run calibration user input script -->
+  <node name="calibration_user_input" pkg="hl2ss_ros" type="calibration_user_input.py" output="screen">
+    <param name="filename" value="$(arg filename)"/>
+  </node>
+</launch>

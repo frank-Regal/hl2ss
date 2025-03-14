@@ -3,6 +3,7 @@
   <arg name="ag_n"             default="0"/>
   <arg name="camera_info_path" default="file://$(find hl2ss_ros)/config/vlc_right_front_calibration_data.yaml"/> <!-- Must start with file:// -->
 
+  <!-- Stream video -->
   <node name="hl_vlc_camera_stream_ag$(arg ag_n)" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
     <param name="host" value="$(arg device)"/>
 
@@ -24,7 +25,8 @@
     <param name="profile" value="0"/>
     <param name="bitrate" value="None"/>
   </node>
-  <!-- Add camera info publisher -->
+
+  <!-- Publish camera info -->
   <node name="hl_vlc_camera_info_ag$(arg ag_n)" pkg="hl2ss_ros" type="camera_info_publisher" output="screen">
     <param name="camera_info_path" value="$(arg camera_info_path)"/>
     <param name="ag_n" value="$(arg ag_n)"/>

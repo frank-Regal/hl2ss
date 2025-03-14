@@ -157,6 +157,7 @@ def collect_data(tf_listener, logger):
 def main():
     # Initialize ROS node
     rospy.init_node('calibration_user_input', anonymous=True)
+    filename = rospy.get_param('~filename', 'calibration_data')
 
     # Set base path for data
     base_path = '/home/frank/project/ws_dev/src/hl2ss/hl2ss_ros/config' # no trailing slash
@@ -167,7 +168,7 @@ def main():
                                      ('vlc', 'april_tag')])
 
     # Logger to write data to file
-    logger = Logger(base_path=base_path, file_name='calibration_data')
+    logger = Logger(base_path=base_path, file_name=filename)
 
     # Set up terminal for non-blocking input
     fd = sys.stdin.fileno()
