@@ -48,6 +48,9 @@ class HoloLensMultiSensorStreamer():
         # Initialize consumer
         self.consumer = hl2ss_mp.consumer()
 
+        # Initialize sync frame stamp
+        self.sync_timestamp = None
+
         # Define Stream Ports
         self.ports = [
             # hl2ss.StreamPort.RM_VLC_LEFTLEFT,
@@ -242,7 +245,15 @@ class HoloLensMultiSensorStreamer():
         try:
             while (self.enable):
                 for port in self.ports:
-                    self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
+
+                    # Get most recent frame for the first port in the list and sync all other ports to this frame
+                    if port == self.ports[0]:
+                        self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
+                        self.sync_timestamp = data.timestamp
+                    else:
+                        self.frame_stamp[port].CURRENT, data = self.sinks[port].get_nearest(self.sync_timestamp)
+
+                    # Process frame if it is not None and the frame stamp has changed
                     if (data is not None and self.frame_stamp[port].CURRENT != self.frame_stamp[port].PREVIOUS):
                         self.writer_map[port](port, data.payload)
                         self.frame_stamp[port].PREVIOUS = self.frame_stamp[port].CURRENT
