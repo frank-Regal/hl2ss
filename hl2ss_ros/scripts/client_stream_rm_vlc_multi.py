@@ -7,8 +7,10 @@ import sys
 import time
 import multiprocessing as mp
 import numpy as np
+from cv_bridge import CvBridge
 import cv2
 import rospy
+from sensor_msgs.msg import Image
 from viewer import hl2ss_mp
 from viewer import hl2ss_lnm
 from viewer import hl2ss
@@ -20,33 +22,31 @@ class FRAMESTAMP:
     CURRENT = None
     PREVIOUS = None
 
-class CACTI_DATASET_STREAM_WRITER():
+class HoloLensMultiSensorStreamer():
     def __init__(self):
 
         # Initialize ROS node
         rospy.init_node('hololens_multi_sensor_streamer_node', anonymous=True)
 
         # Get host parameter from ROS parameter server, default to localhost if not set
-        host =               rospy.get_param('~host', '192.168.11.22')
-        dataset_path =       rospy.get_param('~dataset_path', '/project/ws_dev/src/hl2ss/hl2ss_ros/dataset') # no trailing slash
-        write_data_to_file = rospy.get_param('~write_data_to_file', False)
-        print(f"Connecting client to HoloLens at: '{host}'")
-        print(f"Dataset will be saved to: '{dataset_path}'")
-
-        self.write_data_to_file = write_data_to_file
+        self.host =               rospy.get_param('~host', '192.168.11.22')
+        self.ag_n =               rospy.get_param('~ag_n', '0')
+        self.dataset_path =       rospy.get_param('~dataset_path', '/project/ws_dev/src/hl2ss/hl2ss_ros/dataset') # no trailing slash
+        self.write_data_to_file = rospy.get_param('~write_data_to_file', False)
+        print(f"Connecting client to HoloLens at: '{self.host}'")
 
         # Initialize producer
         self.producer = hl2ss_mp.producer()
 
+        # Initialize bridge
+        self.bridge = CvBridge()
+
         # Initialize Remote Configuration Client
-        self.client_rc = hl2ss_lnm.ipc_rc(host, hl2ss.IPCPort.REMOTE_CONFIGURATION)
+        self.client_rc = hl2ss_lnm.ipc_rc(self.host, hl2ss.IPCPort.REMOTE_CONFIGURATION)
         self.start_configuration_client()
 
         # Initialize consumer
         self.consumer = hl2ss_mp.consumer()
-
-        # Define HoloLens IP Address
-        self.host = host
 
         # Define Stream Ports
         self.ports = [
@@ -58,7 +58,8 @@ class CACTI_DATASET_STREAM_WRITER():
         ]
 
         if self.write_data_to_file:
-            self.dir_map = self.create_output_directories(dataset_path)
+            self.dir_map = self.create_output_directories(self.dataset_path)
+            print(f"Dataset will be saved to: '{self.dataset_path}'")
 
         # Define VLC Stream Settings --------------------------------------------------------------------
         if hl2ss.StreamPort.RM_VLC_LEFTLEFT in self.ports or \
@@ -87,7 +88,8 @@ class CACTI_DATASET_STREAM_WRITER():
         self.configure_streams()
 
         # Initialize VLC Writers
-        self.vlc_writers = self.create_vlc_writers()
+        if self.write_data_to_file:
+            self.vlc_writers = self.create_vlc_writers()
 
         # Initialize Utilities --------------------------------------------------------------------------
         self.buffer_elements = 150    # Maximum number of frames in buffer
@@ -99,13 +101,17 @@ class CACTI_DATASET_STREAM_WRITER():
         # Initialize Frame Stamps and Writer Maps
         self.frame_stamp = {}
         self.writer_map = {}
-
+        self.image_pub = {}
         for port in self.ports:
             self.frame_stamp[port] = FRAMESTAMP()
             if port == hl2ss.StreamPort.MICROPHONE:
                 self.writer_map[port] = lambda port, payload: self.process_mic(port, payload)
             else:
-                self.writer_map[port] = lambda port, payload: self.process_vlc(port, payload, self.vlc_writers.get(port))
+                if self.write_data_to_file:
+                    self.writer_map[port] = lambda port, payload: self.process_vlc_writer(port, payload, self.vlc_writers.get(port))
+                else:
+                    self.writer_map[port] = lambda port, payload: self.process_vlc(port, payload)
+                    self.image_pub[port] = rospy.Publisher(f'hololens_ag{self.ag_n}/{hl2ss.get_port_name(port)}/image_raw', Image, queue_size=10)
 
         # Initialize Audio Queue and Thread
         if hl2ss.StreamPort.MICROPHONE in self.ports:
@@ -243,17 +249,22 @@ class CACTI_DATASET_STREAM_WRITER():
 
                 if(time.time() - start_time > 10):
                     self.enable = False
+                    print("Stopping streams")
 
         finally:
             # Write audio
-            self.write_audio()
+            if self.write_data_to_file:
+                self.write_audio()
 
-            # Cleanup ----------------------------------------------------------
-            # Release video writers
-            for writer in self.vlc_writers.values():
-                if writer is not None:
-                    writer.release()
-            print("Released all video writers")
+                # Cleanup ----------------------------------------------------------
+                # Release video writers
+                for writer in self.vlc_writers.values():
+                    if writer is not None:
+                        writer.release()
+                print("Released all video writers")
+
+                self.audio_queue.put(b'')
+                self.thread.join()
 
             # Stop streams
             for port in self.ports:
@@ -261,13 +272,12 @@ class CACTI_DATASET_STREAM_WRITER():
                 self.producer.stop(port)
                 print(f'Stopped {port}')
 
-            self.audio_queue.put(b'')
-            self.thread.join()
+
 
     """
     Process VLC ----------------------------------------------------------------------------------------
     """
-    def process_vlc(self, port, payload, writer):
+    def process_vlc_writer(self, port, payload, writer):
         if (payload.image is not None and payload.image.size > 0):
             if self.write_data_to_file and writer is not None:
                 try:
@@ -282,6 +292,23 @@ class CACTI_DATASET_STREAM_WRITER():
 
                 except Exception as e:
                     print(f"Error writing VLC frame for '{port}'! Details: {e}")
+    """
+    Process VLC ----------------------------------------------------------------------------------------
+    """
+    def process_vlc(self, port, payload):
+        if (payload.image is not None and payload.image.size > 0):
+            try:
+                # Rotate image for correct orientation based on camera port
+                image_corrected = cv2.rotate(payload.image, hl2ss_3dcv.rm_vlc_get_rotation(port))
+                img_msg = self.bridge.cv2_to_imgmsg(image_corrected, encoding="mono8")
+
+                # Publish frame
+                img_msg.header.stamp = rospy.Time.now()
+                img_msg.header.frame_id = hl2ss.get_port_name(port)
+                self.image_pub[port].publish(img_msg)
+
+            except Exception as e:
+                print(f"Error writing VLC frame for '{port}'! Details: {e}")
 
 
     def process_mic(self, port, payload):
@@ -291,10 +318,10 @@ class CACTI_DATASET_STREAM_WRITER():
 
 def main():
     # Initialize Streamer
-    stream_writer = CACTI_DATASET_STREAM_WRITER(host, dataset_path)
+    streamer = HoloLensMultiSensorStreamer()
 
     # Process Streams
-    stream_writer.process_streams()
+    streamer.process_streams()
 
 if __name__ == '__main__':
     main()

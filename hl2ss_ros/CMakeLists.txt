@@ -35,7 +35,7 @@ catkin_install_python(PROGRAMS
   scripts/si_to_odom_pub.py
   scripts/sample_uv_to_3d_vlc.py
   scripts/cacti_dataset_stream_writer.py
-  scripts/cacti_test.py
+  scripts/client_stream_rm_vlc_multi.py
   scripts/tf_republisher.py
   scripts/tf_static_publishers.py
   scripts/camera_info_pub.py

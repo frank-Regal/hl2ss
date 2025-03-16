@@ -52,7 +52,7 @@ class HoloLensVLCNode:
         self.frame_id = 'rignode'
         self.client = None
         self.log_info = False
-        self.publish_rate = 1/4 # 4hz
+        self.publish_rate = 1 # 10hz
     # -----------------------------------------------------------------------------
     # Start Stream
     # -----------------------------------------------------------------------------
@@ -86,11 +86,13 @@ class HoloLensVLCNode:
             img_msg.header.frame_id =  'vlc'
 
             # Publish tf_msg at 4Hz
-            current_time = rospy.Time.now()
-            if not hasattr(self, 'last_tf_pub_time') or \
-                (current_time - self.last_tf_pub_time).to_sec() >= self.publish_rate:  # 1/4 = 0.25 seconds for 4hz
-                self.image_pub.publish(img_msg)
-                self.last_tf_pub_time = current_time
+            # current_time = rospy.Time.now()
+            # if not hasattr(self, 'last_tf_pub_time') or \
+            #     (current_time - self.last_tf_pub_time).to_sec() >= self.publish_rate:  # 1/4 = 0.25 seconds for 4hz
+            #     self.image_pub.publish(img_msg)
+            #     self.last_tf_pub_time = current_time
+
+            self.image_pub.publish(img_msg)
 
 
             # Publish /tf if desired
