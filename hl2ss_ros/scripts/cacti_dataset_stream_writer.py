@@ -25,7 +25,7 @@ class FRAMESTAMP:
     PREVIOUS = None
 
 class CACTI_DATASET_STREAM_WRITER():
-    def __init__(self, host, output_dir, 
+    def __init__(self, host, output_dir,
                  setting="", condition="", experiment="", participant="", classname=""):
 
         # Initialize producer
@@ -86,6 +86,7 @@ class CACTI_DATASET_STREAM_WRITER():
         self.wrote_audio = True       # This is used to check if audio has been written to disk (needs to start true)
         self.record = False           # This is used to check if recording is active
         self.vlc_writers = {}         # Preconfigured VLC VideoWriters for each port
+        self.sync_timestamp = None    # This is used to sync the timestamps of the VLC streams
 
         # Initialize Frame Stamp Map to ensure no duplicate frames are written to disk
         self.frame_stamp = {
@@ -171,8 +172,8 @@ class CACTI_DATASET_STREAM_WRITER():
             port = "RR"
         if port == "microphone":
             port = "MIC"
-        
-        
+
+
         filename = f"{self.setting}_{self.condition}_{self.experiment}_{self.participant}_{self.classname}_{port}_"
 
         # Add timestamp
@@ -315,7 +316,15 @@ class CACTI_DATASET_STREAM_WRITER():
 
                     # Grab Data
                     for port in self.ports:
-                        self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
+
+                        # Sync timestamps based on the first port in the list
+                        if port == self.ports[0]:
+                            self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
+                            self.sync_timestamp = data.timestamp
+                        else:
+                            self.frame_stamp[port].CURRENT, data = self.sinks[port].get_nearest(self.sync_timestamp)
+
+                        # Process frame if it is not None and the frame stamp has changed
                         if (data is not None and self.frame_stamp[port].CURRENT != self.frame_stamp[port].PREVIOUS):
                             self.writer_map[port](port, data.payload)
                             self.frame_stamp[port].PREVIOUS = self.frame_stamp[port].CURRENT
@@ -383,18 +392,18 @@ def main():
     experiment = rospy.get_param('~experiment', '')
     participant = rospy.get_param('~participant', '')
     classname = rospy.get_param('~classname', '')
-    
+
     # Print out status
     print(f"Connecting client to HoloLens at: '{host}'")
     print(f"Dataset will be saved to: '{output_dir}'")
 
     # Initialize Streamer
-    stream_writer = CACTI_DATASET_STREAM_WRITER(host, 
-                                                output_dir, 
-                                                setting=setting, 
-                                                condition=condition, 
-                                                experiment=experiment, 
-                                                participant=participant, 
+    stream_writer = CACTI_DATASET_STREAM_WRITER(host,
+                                                output_dir,
+                                                setting=setting,
+                                                condition=condition,
+                                                experiment=experiment,
+                                                participant=participant,
                                                 classname=classname)
 
     # Create subscribers
