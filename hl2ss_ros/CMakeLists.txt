@@ -28,17 +28,16 @@ target_link_libraries(camera_info_publisher
 )
 
 catkin_install_python(PROGRAMS
-  scripts/client_stream_rm_vlc.py
-  scripts/client_stream_si.py
+  scripts/hololens_vlc_pub.py
+  scripts/hololens_vlc_multi_sync_pub.py
+  scripts/vlc_uv_to_3d.py
+  scripts/hololens_pose_pub.py
   scripts/pose_to_path.py
-  scripts/client_stream_si_imu.py
-  scripts/si_to_odom_pub.py
-  scripts/sample_uv_to_3d_vlc.py
+  scripts/hololens_imu_pub.py
+  scripts/hololens_odom_pub.py
   scripts/cacti_dataset_stream_writer.py
-  scripts/client_stream_rm_vlc_multi.py
   scripts/tf_republisher.py
-  scripts/tf_static_publishers.py
-  scripts/camera_info_pub.py
-  scripts/calibration_user_input.py
+  scripts/hololens_static_tf_pub.py
+  scripts/cal_eye_in_hand_data_collect.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

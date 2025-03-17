@@ -1,0 +1,47 @@
+<launch>
+  <arg name="device"             default="192.168.11.33"/>
+  <arg name="ag_n"               default="0"/>
+  <arg name="dataset_path"       default="/project/ws_dev/src/hl2ss/hl2ss_ros/dataset"/>
+  <arg name="write_data_to_file" default="False"/>
+
+  <!-- Stream VLC data -->
+  <node name="hololens_ag$(arg ag_n)_vlc_multi_sync_pub" pkg="hl2ss_ros" type="hololens_vlc_multi_sync_pub.py" output="screen">
+    <param name="host" value="$(arg device)"/>
+    <param name="ag_n" value="$(arg ag_n)"/>
+    <param name="dataset_path" value="$(arg dataset_path)"/>
+    <param name="write_data_to_file" value="$(arg write_data_to_file)"/>
+    <param name="mode" value="1"/>
+    <param name="divisor" value="1"/>
+    <param name="profile" value="0"/>
+    <param name="bitrate" value="None"/>
+  </node>
+
+  <!-- Publish camera info for left front camera -->
+  <group ns="hololens_ag$(arg ag_n)">
+    <node name="lf_camera_info" pkg="hl2ss_ros" type="camera_info_publisher" output="screen">
+      <param name="camera_info_path" value="file://$(find hl2ss_ros)/config/NRG3/cal_nrg3_vlc_leftfront.yaml"/> <!-- Must start with file:// -->
+      <param name="ag_n" value="$(arg ag_n)"/>
+      <param name="camera_name" value="rm_vlc_leftfront"/>
+    </node>
+  </group>
+
+  <!-- Launch image_proc node for left front camera -->
+  <group ns="hololens_ag$(arg ag_n)/rm_vlc_leftfront">
+    <node name="lf_image_proc" pkg="image_proc" type="image_proc" output="screen"/>
+  </group>
+
+  <!-- Publish camera info for right front camera -->
+  <group ns="hololens_ag$(arg ag_n)">
+    <node name="rf_camera_info" pkg="hl2ss_ros" type="camera_info_publisher" output="screen">
+      <param name="camera_info_path" value="file://$(find hl2ss_ros)/config/NRG3/cal_nrg3_vlc_rightfront.yaml"/> <!-- Must start with file:// -->
+      <param name="ag_n" value="$(arg ag_n)"/>
+      <param name="camera_name" value="rm_vlc_rightfront"/>
+    </node>
+  </group>
+
+  <!-- Launch image_proc node for right front camera -->
+  <group ns="hololens_ag$(arg ag_n)/rm_vlc_rightfront">
+    <node name="rf_image_proc" pkg="image_proc" type="image_proc" output="screen"/>
+  </group>
+
+</launch>

@@ -31,10 +31,10 @@ frames = []
 def pcmworker(pcmqueue):
     global enable
     global audio_format
-    
+
     while (enable):
         frames.append(pcmqueue.get())
-        
+
     # Save the recorded data as a WAV file
     filepath = '/project/ws_dev/src/hl2ss/viewer/recorder_videos/'
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
@@ -60,7 +60,7 @@ print("Recording started...")
 while (time.time() - start_time < recording_duration):
     remaining = int(recording_duration - (time.time() - start_time))
     print(f'Recording for {remaining} seconds...', end='\r')
-    
+
     data = client.get_next_packet()
     # RAW format is s16 packed, AAC decoded format is f32 planar
     audio = hl2ss_utilities.microphone_planar_to_packed(data.payload) if (profile != hl2ss.AudioProfile.RAW) else data.payload

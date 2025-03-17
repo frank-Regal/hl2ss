@@ -22,13 +22,15 @@ int main(int argc, char** argv)
     ros::NodeHandle private_nh("~");
 
     // Get parameters
-    std::string ag_n;
-    std::string camera_info_path;
+    std::string ag_n{""};
+    std::string camera_info_path{""};
+    std::string camera_name{""};
     private_nh.param<std::string>("ag_n", ag_n, "0");
     private_nh.param<std::string>("camera_info_path", camera_info_path, "");
+    private_nh.param<std::string>("camera_name", camera_name, "hololens_ag" + ag_n);
 
-    std::string camera_name = "hololens_ag" + ag_n;
-    std::string topic_name = "hololens_ag" + ag_n + "/camera_info";
+    // Create topic name
+    std::string topic_name = camera_name + "/camera_info";
 
     // Create publisher
     ros::Publisher info_pub = nh.advertise<sensor_msgs::CameraInfo>(topic_name, 10);
@@ -50,7 +52,7 @@ int main(int argc, char** argv)
     }
 
     // Create subscriber after setting up globals
-    ros::Subscriber sub = nh.subscribe(camera_name + "/vlc_image", 10, &cameraInfoCallback);
+    ros::Subscriber sub = nh.subscribe(camera_name + "/image_raw", 10, &cameraInfoCallback);
 
     ROS_INFO_STREAM("Publishing VLC camera info to topic '" << topic_name << "'...");
 

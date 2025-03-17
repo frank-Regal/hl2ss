@@ -1,4 +1,5 @@
 <launch>
+  <!--NOTE: This launch file does not synchronize the incoming streams. Use hololens_vlc_multi_sync.launch instead for synchronized streams-->
   <!-- Common parameters -->
   <arg name="host" default="192.168.11.223"/>
   <arg name="mode" default="1"/>
@@ -8,7 +9,7 @@
 
   <!-- RM_VLC_LEFTFRONT -->
   <group ns="vlc_leftfront">
-    <node name="hololens_vlc_node" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+    <node name="hololens_ag$(arg ag_n)_vlc_pub" pkg="hl2ss_ros" type="hololens_vlc_pub.py" output="screen">
       <param name="host" value="$(arg host)"/>
       <param name="port" value="3800"/>
       <param name="mode" value="$(arg mode)"/>
@@ -20,7 +21,7 @@
 
   <!-- RM_VLC_LEFTLEFT -->
   <group ns="vlc_leftleft">
-    <node name="hololens_vlc_node" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+    <node name="hololens_ag$(arg ag_n)_vlc_pub" pkg="hl2ss_ros" type="hololens_vlc_pub.py" output="screen">
       <param name="host" value="$(arg host)"/>
       <param name="port" value="3801"/>
       <param name="mode" value="$(arg mode)"/>
@@ -32,7 +33,7 @@
 
   <!-- RM_VLC_RIGHTFRONT -->
   <group ns="vlc_rightfront">
-    <node name="hololens_vlc_node" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+    <node name="hololens_ag$(arg ag_n)_vlc_pub" pkg="hl2ss_ros" type="hololens_vlc_pub.py" output="screen">
       <param name="host" value="$(arg host)"/>
       <param name="port" value="3802"/>
       <param name="mode" value="$(arg mode)"/>
@@ -44,7 +45,7 @@
 
   <!-- RM_VLC_RIGHTRIGHT -->
   <group ns="vlc_rightright">
-    <node name="hololens_vlc_node" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+    <node name="hololens_ag$(arg ag_n)_vlc_pub" pkg="hl2ss_ros" type="hololens_vlc_pub.py" output="screen">
       <param name="host" value="$(arg host)"/>
       <param name="port" value="3803"/>
       <param name="mode" value="$(arg mode)"/>

@@ -76,7 +76,7 @@ class VideoProfile:
 # Video Encoder Level
 class H26xLevel:
     H264_1   =  10
-    H264_1_b =  11    
+    H264_1_b =  11
     H264_1_1 =  11
     H264_1_2 =  12
     H264_1_3 =  13
@@ -348,9 +348,9 @@ class _unpacker:
     def extend(self, chunk):
         self._buffer.extend(chunk)
 
-    def unpack(self):        
+    def unpack(self):
         length = len(self._buffer)
-        
+
         while (True):
             if (self._state == 0):
                 if (length >= 12):
@@ -389,7 +389,7 @@ class _gatherer:
         self._chunk_size = chunk_size
         self._unpacker.reset(mode)
         self._client.open(host, port)
-        
+
     def sendall(self, data):
         self._client.sendall(data)
 
@@ -419,10 +419,10 @@ class H26xEncoderProperty:
     CODECAPI_AVEncH264SPSID = 8
     CODECAPI_AVEncMPVDefaultBPictureCount = 9
     CODECAPI_AVEncMPVGOPSize = 10
-    CODECAPI_AVEncNumWorkerThreads = 11 
+    CODECAPI_AVEncNumWorkerThreads = 11
     CODECAPI_AVEncVideoContentType = 12
     CODECAPI_AVEncVideoEncodeQP = 13
-    CODECAPI_AVEncVideoForceKeyFrame = 14 
+    CODECAPI_AVEncVideoForceKeyFrame = 14
     CODECAPI_AVEncVideoMinQP = 15
     CODECAPI_AVLowLatencyMode = 16
     CODECAPI_AVEncVideoMaxQP = 17
@@ -642,7 +642,7 @@ class _context_manager:
     def __enter__(self):
         self.open()
         return self
-    
+
     def __exit__(self, *args):
         self.close()
 
@@ -803,7 +803,7 @@ class rx_eet(_context_manager):
 
     def get_next_packet(self):
         return self._client.get_next_packet()
-    
+
     def close(self):
         self._client.close()
 
@@ -824,7 +824,7 @@ class rx_extended_audio:
 
     def get_next_packet(self):
         return self._client.get_next_packet()
-    
+
     def close(self):
         self._client.close()
 
@@ -855,7 +855,7 @@ def get_audio_codec_name(profile):
         return 'aac'
     if (profile == AudioProfile.AAC_24000):
         return 'aac'
-    
+
     return None
 
 
@@ -868,7 +868,7 @@ def get_audio_codec_bitrate(profile):
         return 20000*8
     if (profile == AudioProfile.AAC_24000):
         return 24000*8
-    
+
     return None
 
 
@@ -915,7 +915,7 @@ class _unpack_rm_vlc:
 
     def decode(self, payload):
         return np.frombuffer(payload, dtype=np.uint8).reshape(Parameters_RM_VLC.SHAPE)
-    
+
 
 def decode_rm_vlc(profile):
     return _unpack_rm_vlc() if (profile == VideoProfile.RAW) else _decode_rm_vlc(profile)
@@ -967,7 +967,7 @@ def _unpack_rm_depth_ahat_nv12_as_yuv420p(yuv, sensor_ticks):
 class _decode_rm_depth_ahat:
     def __init__(self, profile):
         self.profile = profile
-   
+
     def create(self):
         self._codec = av.CodecContext.create(get_video_codec_name(self.profile), 'r')
 
@@ -1475,7 +1475,7 @@ class rx_decoded_pv(rx_pv):
         self.format = format
         self._codec = decode_pv(profile)
 
-    def open(self):        
+    def open(self):
         self._codec.create(self.width, self.height)
         super().open()
         self.get_next_packet()
@@ -1494,7 +1494,7 @@ class rx_decoded_microphone(rx_microphone):
     def __init__(self, host, port, chunk, profile, level):
         super().__init__(host, port, chunk, profile, level)
         self._codec = decode_microphone(profile, level)
-        
+
     def open(self):
         self._codec.create()
         super().open()
@@ -1512,7 +1512,7 @@ class rx_decoded_extended_audio(rx_extended_audio):
     def __init__(self, host, port, chunk, mixer_mode, loopback_gain, microphone_gain, profile, level):
         super().__init__(host, port, chunk, mixer_mode, loopback_gain, microphone_gain, profile, level)
         self._codec = decode_microphone(profile, None)
-        
+
     def open(self):
         self._codec.create()
         super().open()
@@ -1678,7 +1678,7 @@ def download_calibration_rm_vlc(host, port):
     k          = floats[_Mode2Layout_RM_VLC.BEGIN_K          : _Mode2Layout_RM_VLC.END_K         ]
 
     intrinsics = np.array([[k[0], 0, 0, 0], [0, k[1], 0, 0], [k[2], k[3], 1, 0], [0, 0, 0, 1]], dtype=np.float32)
-    
+
     return _Mode2_RM_VLC(np.dstack((uv2x, uv2y)), extrinsics, np.dstack((mapx, mapy)), intrinsics)
 
 
@@ -1772,18 +1772,18 @@ class _PortName:
     OF = [
         'rm_vlc_leftfront',
         'rm_vlc_leftleft',
-        'rm_vlc_rightfront', 
-        'rm_vlc_rightright', 
-        'rm_depth_ahat', 
-        'rm_depth_longthrow', 
-        'rm_imu_accelerometer', 
-        'rm_imu_gyroscope', 
-        'rm_imu_magnetometer', 
-        'remote_configuration', 
-        'personal_video', 
-        'microphone', 
-        'spatial_input', 
-        'spatial_mapping', 
+        'rm_vlc_rightfront',
+        'rm_vlc_rightright',
+        'rm_depth_ahat',
+        'rm_depth_longthrow',
+        'rm_imu_accelerometer',
+        'rm_imu_gyroscope',
+        'rm_imu_magnetometer',
+        'remote_configuration',
+        'personal_video',
+        'microphone',
+        'spatial_input',
+        'spatial_mapping',
         'scene_understanding',
         'voice_input',
         'unity_message_queue',
@@ -1859,7 +1859,7 @@ class PV_WhiteBalanceValue:
 class PV_ExposureMode:
     Manual = 0
     Auto = 1
-    
+
 
 class PV_ExposureValue:
     Min = 1000 // 10
@@ -1995,7 +1995,7 @@ class ipc_rc(_context_manager):
         self._client.sendall(command)
         data = self._client.download(_SIZEOF.BYTE, ChunkSize.SINGLE_TRANSFER)
         return struct.unpack('<B', data)[0] != 0
-    
+
     def wait_for_pv_subsystem(self, status):
         while (self.get_pv_subsystem_status() != status):
             pass
@@ -2019,7 +2019,7 @@ class ipc_rc(_context_manager):
     def set_pv_exposure(self, mode, value):
         command = struct.pack('<BII', ipc_rc._CMD_SET_PV_EXPOSURE, mode, value)
         self._client.sendall(command)
-    
+
     def set_pv_exposure_priority_video(self, enabled):
         command = struct.pack('<BI', ipc_rc._CMD_SET_PV_EXPOSURE_PRIORITY_VIDEO, enabled)
         self._client.sendall(command)
@@ -2068,7 +2068,7 @@ class ipc_rc(_context_manager):
     def set_interface_priority(self, port, priority):
         command = struct.pack('<BIi', ipc_rc._CMD_SET_INTERFACE_PRIORITY, port, priority)
         self._client.sendall(command)
-    
+
 
 #------------------------------------------------------------------------------
 # Spatial Mapping
@@ -2148,7 +2148,7 @@ class _sm_mesh:
     def __init__(self, vertex_position_scale, pose, bounds, vertex_positions, triangle_indices, vertex_normals):
         self.vertex_position_scale = vertex_position_scale
         self.pose                  = pose
-        self.bounds                = bounds        
+        self.bounds                = bounds
         self.vertex_positions      = vertex_positions
         self.triangle_indices      = triangle_indices
         self.vertex_normals        = vertex_normals
@@ -2156,7 +2156,7 @@ class _sm_mesh:
     def unpack(self, vertex_position_format, triangle_index_format, vertex_normal_format):
         self.vertex_position_scale = np.frombuffer(self.vertex_position_scale, dtype=np.float32).reshape((1, 3))
         self.pose                  = np.frombuffer(self.pose,                  dtype=np.float32).reshape((4, 4))
-        self.bounds                = np.frombuffer(self.bounds,                dtype=np.float32)        
+        self.bounds                = np.frombuffer(self.bounds,                dtype=np.float32)
         self.vertex_positions      = np.frombuffer(self.vertex_positions,      dtype=_SM_Convert.DirectXPixelFormatToNumPy[vertex_position_format]).reshape((-1, 4))
         self.triangle_indices      = np.frombuffer(self.triangle_indices,      dtype=_SM_Convert.DirectXPixelFormatToNumPy[triangle_index_format]).reshape((-1, 3))
         self.vertex_normals        = np.frombuffer(self.vertex_normals,        dtype=_SM_Convert.DirectXPixelFormatToNumPy[vertex_normal_format]).reshape((-1, 4))
@@ -2171,7 +2171,7 @@ class ipc_sm(_context_manager):
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        
+
     def open(self):
         self._client = _client()
         self._client.open(self.host, self.port)
@@ -2191,7 +2191,7 @@ class ipc_sm(_context_manager):
         count = struct.unpack('<Q', self._client.download(_SIZEOF.QWORD, ChunkSize.SINGLE_TRANSFER))[0]
         ids = self._client.download(count * 24, ChunkSize.SINGLE_TRANSFER)
         return [_sm_surface_info(ids[(i*24):(i*24+16)], struct.unpack('<Q', ids[(i*24+16):(i*24+24)])[0]) for i in range(0, count)]
-    
+
     def _download_mesh(self):
         header = self._client.download(100, ChunkSize.SINGLE_TRANSFER)
 
@@ -2202,7 +2202,7 @@ class ipc_sm(_context_manager):
 
         if (status != 0):
             return index, None
-        
+
         payload = self._client.download(bsz + vpl + til + vnl, ChunkSize.SINGLE_TRANSFER)
 
         osb_b = 0
@@ -2220,11 +2220,11 @@ class ipc_sm(_context_manager):
         vertex_normals   = payload[vnd_b:vnd_e]
 
         return index, _sm_mesh(scale, pose, bounds, vertex_positions, triangle_indices, vertex_normals)
-    
+
     def _download_meshes(self, count):
         for _ in range(0, count):
             yield self._download_mesh()
-    
+
     def get_meshes(self, tasks, threads):
         count, data = tasks._get()
         msg = bytearray()
@@ -2336,7 +2336,7 @@ class _su_item:
 
 
 class _su_result:
-    def __init__(self, extrinsics, pose, items):        
+    def __init__(self, extrinsics, pose, items):
         self.extrinsics = extrinsics
         self.pose = pose
         self.items = items
@@ -2350,7 +2350,7 @@ class ipc_su(_context_manager):
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        
+
     def open(self):
         self._client = _client()
         self._client.open(self.host, self.port)
@@ -2364,11 +2364,11 @@ class ipc_su(_context_manager):
 
     def _download_meshes(self):
         return [self._download_mesh() for _ in range(0, struct.unpack('<I', self._client.download(_SIZEOF.DWORD, ChunkSize.SINGLE_TRANSFER))[0])]
-    
+
     def _download_item(self, bi, bk, bo, bp, bl, ba, be, bm, download_meshes, download_collider_meshes):
         d = self._client.download(bm, ChunkSize.SINGLE_TRANSFER)
         return _su_item(d[bi:bk], d[bk:bo], d[bo:bp], d[bp:bl], d[bl:ba], d[ba:be], d[be:bm], self._download_meshes() if (download_meshes) else [], self._download_meshes() if (download_collider_meshes) else [])
-    
+
     def query(self, task):
         self._client.sendall(task._get())
         header = self._client.download(136, ChunkSize.SINGLE_TRANSFER)
@@ -2449,7 +2449,7 @@ class ipc_vi(_context_manager):
         self._client.sendall(command)
         data = self._client.download(_SIZEOF.BYTE, ChunkSize.SINGLE_TRANSFER)
         return struct.unpack('<B', data)[0] != 0
-    
+
     def start(self):
         command = struct.pack('<B', ipc_vi._CMD_START)
         self._client.sendall(command)
@@ -2461,7 +2461,7 @@ class ipc_vi(_context_manager):
         count = struct.unpack('<I', data)[0]
         data = self._client.download(32*count, ChunkSize.SINGLE_TRANSFER)
         return [vi_result(data[(i*32):(i*32+4)], data[(i*32+4):(i*32+8)], data[(i*32+8):(i*32+16)], data[(i*32+16):(i*32+24)], data[(i*32+24):(i*32+32)]) for i in range(0, count)]
-    
+
     def clear(self):
         command = struct.pack('<B', ipc_vi._CMD_CLEAR)
         self._client.sendall(command)
@@ -2490,7 +2490,7 @@ class umq_command_buffer:
 
     def get_data(self):
         return bytes(self._buffer)
-    
+
     def get_count(self):
         return self._count
 
@@ -2499,7 +2499,7 @@ class ipc_umq(_context_manager):
     def __init__(self, host, port):
         self.host = host
         self.port = port
-    
+
     def open(self):
         self._client = _client()
         self._client.open(self.host, self.port)
@@ -2509,7 +2509,7 @@ class ipc_umq(_context_manager):
 
     def pull(self, buffer):
         return self.pull_n(buffer.get_count())
-    
+
     def pull_n(self, count):
         return np.frombuffer(self._client.download(_SIZEOF.DWORD * count, ChunkSize.SINGLE_TRANSFER), dtype=np.uint32)
 
@@ -2537,10 +2537,10 @@ class ipc_gmq(_context_manager):
         header = struct.unpack('<II', self._client.download(_SIZEOF.DWORD * 2, ChunkSize.SINGLE_TRANSFER))
         data = self._client.download(header[1], ChunkSize.SINGLE_TRANSFER) if (header[1] > 0) else b''
         return (header[0], data) if (header[0] != ipc_gmq._CMD_NONE) else None
-    
+
     def push(self, response):
         self._client.sendall(struct.pack('<I', response))
-    
+
     def close(self):
         self._client.close()
 

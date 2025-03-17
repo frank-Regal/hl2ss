@@ -1,10 +1,11 @@
 <launch>
+  <!-- Arguments -->
   <arg name="device"           default="192.168.11.33"/>
   <arg name="ag_n"             default="0"/>
-  <arg name="camera_info_path" default="file://$(find hl2ss_ros)/config/vlc_right_front_calibration_data.yaml"/> <!-- Must start with file:// -->
+  <arg name="camera_info_path" default="file://$(find hl2ss_ros)/config/NRG3/cal_nrg3_vlc_rightfront.yaml"/> <!-- Must start with file:// -->
 
-  <!-- Stream video -->
-  <node name="hl_vlc_camera_stream_ag$(arg ag_n)" pkg="hl2ss_ros" type="client_stream_rm_vlc.py" output="screen">
+  <!-- Stream VLC Camera Node -->
+  <node name="hololens_ag$(arg ag_n)_vlc_pub" pkg="hl2ss_ros" type="hololens_vlc_pub.py" output="screen">
     <param name="host" value="$(arg device)"/>
 
     <!-- port options:
@@ -31,4 +32,10 @@
     <param name="camera_info_path" value="$(arg camera_info_path)"/>
     <param name="ag_n" value="$(arg ag_n)"/>
   </node>
+
+  <!-- Launch image_proc node for image rectification -->
+  <group ns="hololens_ag$(arg ag_n)">
+    <node name="image_proc" pkg="image_proc" type="image_proc" output="screen"/>
+  </group>
+
 </launch>

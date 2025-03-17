@@ -136,7 +136,7 @@ if __name__ == '__main__':
                 if (frame.shape[0] == 0):
                     print(f'Frame is empty for {port}')
                     return
-                
+
                 # Create directory for this camera if it doesn't exist
                 camera_dir = os.path.join('frames', hl2ss.get_port_name(port))
                 os.makedirs(camera_dir, exist_ok=True)
@@ -150,7 +150,7 @@ if __name__ == '__main__':
                 print(f"Shape of image_corrected: {image_corrected.shape} | Shape of frame: {frame.shape}")
                 print(f"Data type of image_corrected: {image_corrected.dtype} | Data type of frame: {frame.dtype}")
                 # blank_image = np.zeros((image_corrected.shape[0], image_corrected.shape[1], 3), dtype=np.uint8)
-                
+
                 if (writer is not None):
                     writer.write(frame)
                 else:

@@ -30,7 +30,7 @@ class HoloLensVLCNode:
     # Initialize Node
     # -----------------------------------------------------------------------------
     def __init__(self):
-        rospy.init_node('hololens_vlc_node', anonymous=True)
+        rospy.init_node('hololens_vlc_pub', anonymous=True)
 
         # ROS Parameters
         self.ag_n =       rospy.get_param('~ag_n'      , '0'                               )
@@ -43,7 +43,7 @@ class HoloLensVLCNode:
         self.bitrate =    rospy.get_param('~bitrate'   , None                              )
 
         # Publishers
-        self.image_pub = rospy.Publisher(f'hololens_ag{self.ag_n}/vlc_image', Image, queue_size=10)
+        self.image_pub = rospy.Publisher(f'hololens_ag{self.ag_n}/image_raw', Image, queue_size=10)
         self.tf_pub =    rospy.Publisher(f'/tf', TFMessage, queue_size=10)
 
         # Init class variables
@@ -115,7 +115,7 @@ class HoloLensVLCNode:
 
             # Log info if configured
             if self.log_info == False:
-                rospy.loginfo(f'Publishing VLC stream to topic "hololens_ag{self.ag_n}/vlc_image" ...')
+                rospy.loginfo(f'Publishing VLC stream to topic "hololens_ag{self.ag_n}/image_raw" ...')
                 self.log_info = True
         except Exception as e:
             rospy.logerr(e)

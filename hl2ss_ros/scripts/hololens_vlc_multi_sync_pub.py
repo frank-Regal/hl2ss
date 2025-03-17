@@ -57,7 +57,6 @@ class HoloLensMultiSensorStreamer():
             hl2ss.StreamPort.RM_VLC_LEFTFRONT,
             hl2ss.StreamPort.RM_VLC_RIGHTFRONT,
             # hl2ss.StreamPort.RM_VLC_RIGHTRIGHT,
-            # hl2ss.StreamPort.MICROPHONE
         ]
 
         if self.write_data_to_file:
