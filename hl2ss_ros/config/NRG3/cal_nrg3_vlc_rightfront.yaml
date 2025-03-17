@@ -1,0 +1,26 @@
+image_width: 480
+image_height: 640
+camera_name: hololens_ag0
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [361.7281232472139,               0.0, 241.42893007240616,
+                       0.0, 361.6944854739066, 314.80771578871975,
+                       0.0,               0.0,                1.0]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.007061619286558245, 0.007937962025838338, 0.00399074911993357, -0.0018466694704144257, 0.0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [361.72812325,          0.0, 241.42893007,   0.0,
+                  0.0, 361.69448547, 314.80771579,   0.0,
+                  0.0,          0.0,          1.0,   0.0 ]

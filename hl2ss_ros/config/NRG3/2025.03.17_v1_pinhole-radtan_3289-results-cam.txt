@@ -1,0 +1,30 @@
+Calibration results 
+====================
+Camera-system parameters:
+cam0 (/hololens_ag0/rm_vlc_leftfront/image_raw):
+    type: <class 'aslam_cv.libaslam_cv_python.DistortedPinholeCameraGeometry'>
+    distortion: [-0.01014541  0.01025957  0.00342309  0.00364146] +- [0.00205158 0.00168084 0.00057317 0.00050761]
+    projection: [361.47690547 361.51369066 243.52702078 315.92877346] +- [0.18905832 0.20819502 0.86647895 0.83696142]
+    reprojection error: [0.000034, 0.000123] +- [0.130094, 0.128018]
+
+cam1 (/hololens_ag0/rm_vlc_rightfront/image_raw):
+    type: <class 'aslam_cv.libaslam_cv_python.DistortedPinholeCameraGeometry'>
+    distortion: [-0.00706162  0.00793796  0.00399075 -0.00184667] +- [0.00202848 0.00147778 0.00060006 0.00051789]
+    projection: [361.72812325 361.69448547 241.42893007 314.80771579] +- [0.19396284 0.22039683 0.87227408 0.86754768]
+    reprojection error: [0.000013, 0.000125] +- [0.125024, 0.123640]
+
+baseline T_1_0:
+    q: [-0.00649401  0.01203406  0.00305933  0.99990182] +- [0.00161292 0.00125864 0.00020773]
+    t: [-0.0990349  -0.00001608 -0.00105905] +- [0.00010209 0.00010188 0.00027155]
+
+
+
+Target configuration
+====================
+
+  Type: aprilgrid
+  Tags: 
+    Rows: 3
+    Cols: 4
+    Size: 0.05 [m]
+    Spacing 0.0125 [m]

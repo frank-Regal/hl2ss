@@ -1,0 +1,26 @@
+image_width: 480
+image_height: 640
+camera_name: vlc_leftfront
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [361.476905473288,               0.0,  243.527020775853,
+                      0.0, 361.5136906600412, 315.9287734624237,
+                      0.0,               0.0,               1.0]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.010145411484237499, 0.010259565735071911, 0.0034230851947034957, 0.0036414613345745017, 0.0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [361.47690547,          0.0, 243.52702078,   0.0,
+                  0.0, 361.51369066, 315.92877346,   0.0,
+                  0.0,          0.0,          1.0,   0.0]
