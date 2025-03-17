@@ -318,12 +318,14 @@ class CACTI_DATASET_STREAM_WRITER():
                     for port in self.ports:
 
                         # Sync timestamps based on the first port in the list
-                        if port == self.ports[0]:
+                        if port == self.ports[0] and port != hl2ss.StreamPort.MICROPHONE:
                             self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()
                             self.sync_timestamp = data.timestamp
-                        else:
+                        elif port != hl2ss.StreamPort.MICROPHONE:
                             self.frame_stamp[port].CURRENT, data = self.sinks[port].get_nearest(self.sync_timestamp)
-
+                        else:
+                            self.frame_stamp[port].CURRENT, data = self.sinks[port].get_most_recent_frame()    
+                        
                         # Process frame if it is not None and the frame stamp has changed
                         if (data is not None and self.frame_stamp[port].CURRENT != self.frame_stamp[port].PREVIOUS):
                             self.writer_map[port](port, data.payload)

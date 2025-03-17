@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <launch>
 
-<arg name="host" default="192.168.11.223" /> <!-- IP address of the HoloLens -->
+<arg name="host" default="192.168.11.33" /> <!-- IP address of the HoloLens -->
 <arg name="output_dir" default="/project/ws_dev/src/hl2ss/hl2ss_ros/dataset" /> <!-- no trailing slash -->
 
 <!--Change these on ever condition change-->
-<arg name="setting" default="Indoor" /> <!-- Outdoor, Indoor -->
-<arg name="condition" default="NP" /> <!-- NP,P -->
-<arg name="experiment" default="NS" /> <!-- NS,S -->
-<arg name="participant" default="1" />
+<arg name="setting" default="Outdoor" /> <!-- Outdoor, Indoor -->
+<arg name="condition" default="P" /> <!-- NP,P -->
+<arg name="experiment" default="S" /> <!-- NS,S -->
+<arg name="participant" default="8" />
 
  
  <!-- leave blank by default-->
