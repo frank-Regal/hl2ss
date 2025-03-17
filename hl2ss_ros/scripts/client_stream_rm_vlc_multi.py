@@ -241,9 +241,8 @@ class HoloLensMultiSensorStreamer():
     Process Streams -----------------------------------------------------------------------------------
     """
     def process_streams(self):
-        start_time = time.time()
         try:
-            while (self.enable):
+            while not rospy.is_shutdown():
                 for port in self.ports:
 
                     # Get most recent frame for the first port in the list and sync all other ports to this frame
@@ -258,10 +257,6 @@ class HoloLensMultiSensorStreamer():
                         self.writer_map[port](port, data.payload)
                         self.frame_stamp[port].PREVIOUS = self.frame_stamp[port].CURRENT
 
-                if(time.time() - start_time > 10):
-                    self.enable = False
-                    print("Stopping streams")
-
         finally:
             # Write audio
             if self.write_data_to_file:
@@ -274,7 +269,10 @@ class HoloLensMultiSensorStreamer():
                         writer.release()
                 print("Released all video writers")
 
+                # Signal audio worker to terminate
                 self.audio_queue.put(b'')
+
+                # Wait for audio worker to terminate
                 self.thread.join()
 
             # Stop streams
@@ -282,8 +280,6 @@ class HoloLensMultiSensorStreamer():
                 self.sinks[port].detach()
                 self.producer.stop(port)
                 print(f'Stopped {port}')
-
-
 
     """
     Process VLC ----------------------------------------------------------------------------------------
