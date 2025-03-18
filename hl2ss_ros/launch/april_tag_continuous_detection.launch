@@ -4,7 +4,7 @@
 
   <!-- configure camera input -->
   <arg name="camera_name" default="/hololens_ag0" />
-  <arg name="image_topic" default="vlc_image" />
+  <arg name="image_topic" default="rm_vlc_leftfront/image_raw" />
   <arg name="queue_size" default="1" />
 
   <!-- apriltag_ros continuous detection node -->
