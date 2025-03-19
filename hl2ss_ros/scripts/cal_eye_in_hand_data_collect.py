@@ -2,13 +2,16 @@
 import rospy
 import tf2_ros
 import numpy as np
-
+from geometry_msgs.msg import TransformStamped
+from tf2_msgs.msg import TFMessage
+from tf.transformations import quaternion_from_matrix, quaternion_matrix
 import sys
 import tty
 import termios
 import select
 import os
 import datetime
+import pdb
 
 
 """
@@ -26,6 +29,7 @@ class TfListener:
 
         # Initialize map to store transforms between each source-target pair
         self.tf_map = {self.formatted_key(source_frame, target_frame): None for source_frame, target_frame in frames}
+        self.tf_pub = rospy.Publisher('/tf', TFMessage, queue_size=10)
 
     # Helper to format dictionary keys for transform pairs
     def formatted_key(self, source_frame, target_frame):
@@ -48,8 +52,18 @@ class TfListener:
         for key in self.tf_map.keys():
             # Split key into source and target frames
             source_frame, target_frame = key.split('_to_')
+
             # Look up and store transform
-            self.tf_map[key] = self.get_transform(source_frame, target_frame)
+            if key == 'rm_vlc_leftfront_to_april_tag':
+                repub_tf = self.get_transform(source_frame, target_frame)
+                if repub_tf is not None:
+                    repub_tf = self.camera_to_ros_transform(repub_tf)
+                    self.tf_pub.publish([repub_tf])
+                    self.tf_map[key] = repub_tf
+                else:
+                    pass
+            else:
+                self.tf_map[key] = self.get_transform(source_frame, target_frame)
 
     # Print all transforms in the map
     def print_transforms(self):
@@ -65,6 +79,73 @@ class TfListener:
     def LOG(self, message):
         with open('log.txt', 'a') as f:
             f.write(f'{message}\n')
+
+    # Convert camera convention to ROS convention (position)
+    #  Camera convention is x=right,   y=-up,    z=forward
+    #  ROS convention is    x=forward, y=-right, z=up
+    def camera_to_ros_position(self, tf_camera_convention):
+        return np.array([tf_camera_convention.transform.translation.z, -tf_camera_convention.transform.translation.x, -tf_camera_convention.transform.translation.y])
+
+    # Convert camera convention to ROS convention (rotation)
+    #  Camera convention is x=right,   y=-up,    z=forward
+    #  ROS convention is    x=forward, y=-right, z=up
+    def camera_to_ros_rotation(self, tf_camera_convention):
+        return np.array([tf_camera_convention.transform.rotation.z,-tf_camera_convention.transform.rotation.x, -tf_camera_convention.transform.rotation.y, tf_camera_convention.transform.rotation.w])
+
+    # Convert camera convention to ROS convention (transform)
+    #  Camera convention is x=right,   y=-up,    z=forward
+    #  ROS convention is    x=forward, y=-right, z=up
+    def camera_to_ros_transform(self, tf_camera_convention):
+
+        tf_camera = TransformStamped()
+        tf_camera.header.stamp = rospy.Time.now()
+        tf_camera.header.frame_id = 'camera'
+        tf_camera.child_frame_id = 'april'
+        pos = self.camera_to_ros_position(tf_camera_convention)
+        rot = self.camera_to_ros_rotation(tf_camera_convention)
+        rot_mat_so3 = quaternion_matrix(rot)
+        rot_mat_so3 = np.array([rot_mat_so3[0][0:3], rot_mat_so3[1][0:3], rot_mat_so3[2][0:3]])
+        rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, -90, 'x', 'body')
+        rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, 180, 'z', 'body')
+        rot_mat_se3 = np.eye(4)
+        rot_mat_se3[0:3, 0:3] = rot_mat_so3
+        rot_manip = quaternion_from_matrix(rot_mat_se3)
+        tf_camera.transform.translation.x = pos[0]
+        tf_camera.transform.translation.y = pos[1]
+        tf_camera.transform.translation.z = pos[2]
+        tf_camera.transform.rotation.x = rot_manip[0]
+        tf_camera.transform.rotation.y = rot_manip[1]
+        tf_camera.transform.rotation.z = rot_manip[2]
+        tf_camera.transform.rotation.w = rot_manip[3]
+        return tf_camera
+
+    # -----------------------------------------------------------------------------
+    # Rotate a matrix about a given axis
+    # -----------------------------------------------------------------------------
+    def rotate_about_axis(self, matrix_S03, angle_deg, axis=None, frame='space'):
+        if axis is None:
+            return matrix_S03
+        elif axis == 'x':
+            rotation_matrix = np.array([[1, 0, 0],
+                                      [0, np.cos(np.radians(angle_deg)), -np.sin(np.radians(angle_deg))],
+                                      [0, np.sin(np.radians(angle_deg)), np.cos(np.radians(angle_deg))]])
+        elif axis == 'y':
+            rotation_matrix = np.array([[np.cos(np.radians(angle_deg)), 0, np.sin(np.radians(angle_deg))],
+                                      [0, 1, 0],
+                                      [-np.sin(np.radians(angle_deg)), 0, np.cos(np.radians(angle_deg))]])
+        elif axis == 'z':
+            rotation_matrix = np.array([[np.cos(np.radians(angle_deg)), -np.sin(np.radians(angle_deg)), 0],
+                                      [np.sin(np.radians(angle_deg)), np.cos(np.radians(angle_deg)), 0],
+                                      [0, 0, 1]])
+        else:
+            raise ValueError(f"Invalid axis: {axis}. Please choose 'x', 'y', or 'z'.")
+
+        if frame == 'space':
+            return rotation_matrix @ matrix_S03
+        elif frame == 'body':
+            return matrix_S03 @ rotation_matrix
+        else:
+            raise ValueError(f"Invalid frame: {frame}. Please choose 'space' or 'body'.")
 
     # Get position of target frame relative to source frame
     def get_position(self, source_frame, target_frame):
@@ -125,11 +206,11 @@ def collect_data(tf_listener, logger):
 
     logger.setup_file()
 
-    # Get positions of the QR code, yellow, and pink
+    # Get positions
     t_Robot_config = tf_listener.get_position(source_frame='world', target_frame='rignode')
     q_Robot_config = tf_listener.get_rotation(source_frame='world', target_frame='rignode')
-    t_camera_config = tf_listener.get_position(source_frame='vlc', target_frame='april_tag')
-    q_camera_config = tf_listener.get_rotation(source_frame='vlc', target_frame='april_tag')
+    t_camera_config = tf_listener.get_position(source_frame='camera', target_frame='april')
+    q_camera_config = tf_listener.get_rotation(source_frame='camera', target_frame='april')
 
     clear()
     if t_Robot_config is not None and t_camera_config is not None and q_Robot_config is not None and q_camera_config is not None:
@@ -165,8 +246,8 @@ def main():
     # Tf Listener expects a list of tuples, where each tuple contains two strings
     # representing the source frame first and target frame second e.g. [(source_frame, target_frame), ...]
     tf_listener = TfListener(frames=[('world', 'rignode'),
-                                     ('vlc', 'april_tag')])
-
+                                     ('rm_vlc_leftfront', 'april_tag'),
+                                     ('camera', 'april')])
     # Logger to write data to file
     logger = Logger(base_path=base_path, file_name=filename)
 

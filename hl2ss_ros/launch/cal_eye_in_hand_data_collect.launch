@@ -3,7 +3,8 @@
   <arg name="filename" default="calibration_data"/>
 
   <!-- Run calibration user input script -->
-  <node name="calibration_user_input" pkg="hl2ss_ros" type="calibration_user_input.py" output="screen">
+  <node name="cal_eye_in_hand_data_collect" pkg="hl2ss_ros" type="cal_eye_in_hand_data_collect.py" output="screen">
     <param name="filename" value="$(arg filename)"/>
   </node>
+
 </launch>
