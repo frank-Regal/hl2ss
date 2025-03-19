@@ -13,6 +13,13 @@ import os
 import datetime
 import pdb
 
+class FRAME:
+    world           = 'qr_code'
+    hololens        = 'hololens_ag0/base_link'
+    camera          = 'rm_vlc_leftfront'
+    camera_repub    = 'camera'
+    april_tag       = 'april_tag'
+    april_tag_repub = 'april'
 
 """
 Class to listen to and store TF transforms between specified frames
@@ -55,7 +62,7 @@ class TfListener:
 
             # Look up and store transform
             # republish transform to camera frame with april tag now in ros coordinate frames
-            if key == 'rm_vlc_leftfront_to_april_tag':
+            if key == self.formatted_key(FRAME.camera, FRAME.april_tag):
                 repub_tf = self.get_transform(source_frame, target_frame)
                 if repub_tf is not None:
                     repub_tf = self.camera_to_ros_transform(repub_tf)
@@ -100,8 +107,8 @@ class TfListener:
         # Create transform stamped message
         tf_camera = TransformStamped()
         tf_camera.header.stamp = rospy.Time.now()
-        tf_camera.header.frame_id = 'camera'
-        tf_camera.child_frame_id = 'april'
+        tf_camera.header.frame_id = FRAME.camera_repub
+        tf_camera.child_frame_id = FRAME.april_tag_repub
 
         # Get position and rotation in ROS convention
         pos = self.camera_to_ros_position(tf_camera_convention)
@@ -112,7 +119,7 @@ class TfListener:
         rot_mat_so3 = np.array([rot_mat_so3[0][0:3], rot_mat_so3[1][0:3], rot_mat_so3[2][0:3]])
 
         # Apply rotations to align coordinate frames
-        rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, -90, 'x', 'body')
+        # rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, -90, 'x', 'body')
         rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, 180, 'z', 'body')
 
         # Convert back to quaternion
@@ -183,7 +190,7 @@ class Logger:
         self.base_path = base_path
 
     def format_data(self, t_Robot_config, q_Robot_config, t_camera_config, q_camera_config):
-        return f'{float(t_Robot_config[0]):.4f}, {float(t_Robot_config[1]):.4f}, {float(t_Robot_config[2]):.4f}; {float(q_Robot_config[0]):.4f}, {float(q_Robot_config[1]):.4f}, {float(q_Robot_config[2]):.4f}, {float(q_Robot_config[3]):.4f}; {float(t_camera_config[0]):.4f}, {float(t_camera_config[1]):.4f}, {float(t_camera_config[2]):.4f}; {float(q_camera_config[0]):.4f}, {float(q_camera_config[1]):.4f}, {float(q_camera_config[2]):.4f}, {float(q_camera_config[3]):.4f};'
+        return f'{float(t_Robot_config[0]):>8.4f},{float(t_Robot_config[1]):>8.4f},{float(t_Robot_config[2]):>8.4f}; {float(q_Robot_config[0]):>8.4f},{float(q_Robot_config[1]):>8.4f},{float(q_Robot_config[2]):>8.4f},{float(q_Robot_config[3]):>8.4f}; {float(t_camera_config[0]):>8.4f},{float(t_camera_config[1]):>8.4f},{float(t_camera_config[2]):>8.4f}; {float(q_camera_config[0]):>8.4f},{float(q_camera_config[1]):>8.4f},{float(q_camera_config[2]):>8.4f},{float(q_camera_config[3]):>8.4f};'
 
     def write_to_file(self, data):
         with open(self.file_path, 'a') as f:
@@ -219,10 +226,10 @@ def collect_data(tf_listener, logger):
     logger.setup_file()
 
     # Get positions
-    t_Robot_config = tf_listener.get_position(source_frame='world', target_frame='rignode')
-    q_Robot_config = tf_listener.get_rotation(source_frame='world', target_frame='rignode')
-    t_camera_config = tf_listener.get_position(source_frame='camera', target_frame='april')
-    q_camera_config = tf_listener.get_rotation(source_frame='camera', target_frame='april')
+    t_Robot_config = tf_listener.get_position(source_frame=FRAME.world, target_frame=FRAME.hololens)
+    q_Robot_config = tf_listener.get_rotation(source_frame=FRAME.world, target_frame=FRAME.hololens)
+    t_camera_config = tf_listener.get_position(source_frame=FRAME.camera_repub, target_frame=FRAME.april_tag_repub)
+    q_camera_config = tf_listener.get_rotation(source_frame=FRAME.camera_repub, target_frame=FRAME.april_tag_repub)
 
     clear()
     if t_Robot_config is not None and t_camera_config is not None and q_Robot_config is not None and q_camera_config is not None:
@@ -257,9 +264,9 @@ def main():
 
     # Tf Listener expects a list of tuples, where each tuple contains two strings
     # representing the source frame first and target frame second e.g. [(source_frame, target_frame), ...]
-    tf_listener = TfListener(frames=[('world', 'rignode'),
-                                     ('rm_vlc_leftfront', 'april_tag'),
-                                     ('camera', 'april')])
+    tf_listener = TfListener(frames=[(FRAME.world, FRAME.hololens),
+                                     (FRAME.camera, FRAME.april_tag),
+                                     (FRAME.camera_repub, FRAME.april_tag_repub)])
     # Logger to write data to file
     logger = Logger(base_path=base_path, file_name=filename)
 
