@@ -54,6 +54,7 @@ class TfListener:
             source_frame, target_frame = key.split('_to_')
 
             # Look up and store transform
+            # republish transform to camera frame with april tag now in ros coordinate frames
             if key == 'rm_vlc_leftfront_to_april_tag':
                 repub_tf = self.get_transform(source_frame, target_frame)
                 if repub_tf is not None:
@@ -96,20 +97,30 @@ class TfListener:
     #  Camera convention is x=right,   y=-up,    z=forward
     #  ROS convention is    x=forward, y=-right, z=up
     def camera_to_ros_transform(self, tf_camera_convention):
-
+        # Create transform stamped message
         tf_camera = TransformStamped()
         tf_camera.header.stamp = rospy.Time.now()
         tf_camera.header.frame_id = 'camera'
         tf_camera.child_frame_id = 'april'
+
+        # Get position and rotation in ROS convention
         pos = self.camera_to_ros_position(tf_camera_convention)
         rot = self.camera_to_ros_rotation(tf_camera_convention)
+
+        # Convert quaternion to rotation matrix
         rot_mat_so3 = quaternion_matrix(rot)
         rot_mat_so3 = np.array([rot_mat_so3[0][0:3], rot_mat_so3[1][0:3], rot_mat_so3[2][0:3]])
+
+        # Apply rotations to align coordinate frames
         rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, -90, 'x', 'body')
         rot_mat_so3 = self.rotate_about_axis(rot_mat_so3, 180, 'z', 'body')
+
+        # Convert back to quaternion
         rot_mat_se3 = np.eye(4)
         rot_mat_se3[0:3, 0:3] = rot_mat_so3
         rot_manip = quaternion_from_matrix(rot_mat_se3)
+
+        # Set transform values
         tf_camera.transform.translation.x = pos[0]
         tf_camera.transform.translation.y = pos[1]
         tf_camera.transform.translation.z = pos[2]
@@ -117,6 +128,7 @@ class TfListener:
         tf_camera.transform.rotation.y = rot_manip[1]
         tf_camera.transform.rotation.z = rot_manip[2]
         tf_camera.transform.rotation.w = rot_manip[3]
+
         return tf_camera
 
     # -----------------------------------------------------------------------------
