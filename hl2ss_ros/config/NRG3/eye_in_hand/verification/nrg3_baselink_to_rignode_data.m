@@ -5,7 +5,7 @@
 %    0.0249967,  0.9994996,  0.0193841,    0.048
 %   -0.1081077, -0.0165738,  0.9940010,    0.036
 %            0,          0,          0,    1.0000]
-% 
+%
 % KNOWN: Transformation Matrix from
 % 	'rignode' to 'hololens/base_link':
 % [  0.9937710,  0.0269937, -0.1081228, -0.056
@@ -26,7 +26,7 @@
 %     0.0171    0.9990    0.0420   -0.0118
 %    -0.1076   -0.0400    0.9934   -0.0062
 %          0         0         0    1.0000
-% 
+%
 % STEVEN:
 % T =
 %     0.9920    0.0198   -0.1250    1.9569
@@ -36,7 +36,7 @@
 % Data
 function [q_Robot_config, q_camera_config,t_Robot_config,t_camera_config ]= nrg3_baselink_to_rignode_data()
 
-% Position data from world to holoLens/base_link 
+% Position data from world to holoLens/base_link
   t_Robot_config=[
  0.2355, -0.4574, -0.4367;
  0.2213, -0.6264, -0.4384;
@@ -61,7 +61,7 @@ function [q_Robot_config, q_camera_config,t_Robot_config,t_camera_config ]= nrg3
 
 ];
 
-% Rotation data from world to holoLens/base_link 
+% Rotation data from world to holoLens/base_link
 q_Robot_config=[
  -0.0024, -0.0041,  0.9953, -0.0971;
  -0.0037, -0.0029,  0.9342, -0.3568;
@@ -85,7 +85,7 @@ q_Robot_config=[
  -0.0109, -0.0033,  0.7496, -0.6618;
 ];
 
-% Position data from hololens/rm_vlc_leftfront to april_tag 
+% Position data from hololens/rm_vlc_leftfront to april_tag
 t_camera_config=[
  0.1865, -0.5162, -0.4014;
  0.2088, -0.7020, -0.4032;
@@ -107,9 +107,9 @@ t_camera_config=[
 -1.4185, -1.4636, -0.4065;
 -1.6101, -2.1461, -0.4042;
 -1.6933, -2.3280, -0.4046;
-];  
+];
 
-% Rotation data from hololens/rm_vlc_leftfront to april_tag 
+% Rotation data from hololens/rm_vlc_leftfront to april_tag
 q_camera_config=[
  -0.0551, -0.0185,  0.9922, -0.1102;
  -0.0506, -0.0306,  0.9276, -0.3688;
