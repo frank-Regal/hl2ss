@@ -1,4 +1,4 @@
-%% Eye-In-Hand Calibration Data
+%% Eye-In-Hand Calibration Results
 % Transformation Matrix from
 % 	'hololens/base_link' to 'hololens/rm_vlc_rightfront':
 %    -0.9982    0.0229   -0.0553    0.0141
@@ -13,11 +13,34 @@
 %    -0.0553   -0.0291    0.9980    0.0063
 %          0         0         0    1.0000
 
-% Data
-function [q_Robot_config, q_camera_config,t_Robot_config,t_camera_config ]=nrg3_RF_cal_data_100()
+%% Raw Data
+function [q_world2headset, q_cam2target, t_world2headset, t_cam2target] = nrg3_RF_cal_data_100_raw_A()
 
-% Position data from world to holoLens/base_link
-  t_Robot_config=[
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HoloLens 2 'NRG3' RightFront Eye-In-Hand Calibration Data
+% 
+% About:
+%   Function to grab raw data to perform a eye-in-hand calibration
+%   on the RightFront VLC camera of the NRG3 HoloLens 2. It was obtained 
+%   using the RightFront VLC Camera with an AprilTag and using the headset 
+%   pose obtained w.r.t. world from a Unity application. 
+% 
+% Input:
+%   None
+% 
+% Output:
+%   Transforms for eye-in-hand calibration
+% 
+% Format:
+%   ROS Coord Conv: RH, x=forward,y=-right, z=up
+%   Position      : [x, y, z]
+%   Quaternion    : [x, y, z, w]
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Position data from 'world' to 'holoLens/base_link' (t_world2headset)
+% [x, y, z]
+t_world2headset=[
 0.6312, 0.2101, -0.6092;
 0.6323, 0.0226, -0.6149;
 0.6764, -0.1200, -0.6196;
@@ -120,8 +143,9 @@ function [q_Robot_config, q_camera_config,t_Robot_config,t_camera_config ]=nrg3_
 0.6909, -0.0353, -0.9493;
 ];
 
-% Rotation data from world to holoLens/base_link
-q_Robot_config=[
+% Rotation data from 'world' to 'holoLens/base_link' (q_world2headset)
+% [x, y, z, w]
+q_world2headset=[
  0.0145, 0.0501, -0.0100, 0.9986;
   0.0129, 0.0500, 0.0399, 0.9979;
   0.0122, 0.0492, 0.0678, 0.9964;
@@ -224,8 +248,9 @@ q_Robot_config=[
   0.0313, -0.1373, 0.1397, 0.9801;
 ];
 
-% Position data from hololens/rm_vlc_leftfront to april_tag
-t_camera_config=[
+% Position data from 'hololens/rm_vlc_rightfront' to 'april_tag' (t_cam2target)
+% [x, y, z]
+t_cam2target=[
  0.6114, -0.0416, 0.0296;
   0.6140, 0.0804, 0.0313;
   0.5900, 0.1901, 0.0248;
@@ -328,8 +353,9 @@ t_camera_config=[
   0.6395, 0.1248, 0.1256;
 ];
 
-% Rotation data from hololens/rm_vlc_leftfront to april_tag
-q_camera_config=[
+% Rotation data from 'hololens/rm_vlc_rightfront' to 'april_tag' (q_cam2target)
+% [x, y, z, w]
+q_cam2target=[
  0.0071, -0.1339, 0.0333, 0.9904;
  0.0118, -0.1250, -0.0206, 0.9919
  0.0147, -0.1295, -0.0548, 0.9900
