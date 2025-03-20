@@ -2,7 +2,8 @@
   <!-- Arguments -->
   <arg name="device"           default="192.168.11.33"/>
   <arg name="ag_n"             default="0"/>
-  <arg name="camera_info_path" default="file://$(find hl2ss_ros)/config/NRG3/cal_nrg3_vlc_rightfront.yaml"/> <!-- Must start with file:// -->
+  <arg name="base_frame"       default="qr_code"/>
+  <arg name="camera_info_path" default="file://$(find hl2ss_ros)/config/NRG3/camera_intrinsics/cal_nrg3_vlc_leftfront.yaml"/> <!-- Must start with file:// -->
 
   <!-- Stream VLC Camera Node -->
   <node name="hololens_ag$(arg ag_n)_vlc_pub" pkg="hl2ss_ros" type="hololens_vlc_pub.py" output="screen">
@@ -14,7 +15,7 @@
     RM_VLC_RIGHTFRONT    = 3802
     RM_VLC_RIGHTRIGHT    = 3803
     -->
-    <param name="port" value="3802"/>
+    <param name="port" value="3800"/>
 
     <!-- Stream Operating Mode
     0: Device data (e.g. video)
@@ -25,6 +26,7 @@
     <param name="divisor" value="1"/>
     <param name="profile" value="0"/>
     <param name="bitrate" value="None"/>
+    <param name="base_frame" value="$(arg base_frame)"/>
   </node>
 
   <!-- Publish camera info -->

@@ -3,9 +3,12 @@
 
   <group ns="hololens_ag$(arg ag_n)">
     <node name="hololens_static_tf_pub" pkg="hl2ss_ros" type="hololens_static_tf_pub.py" output="screen"/>
-    <param name="hololens_baselink" value="hololens_ag$(arg ag_n)/base_link"/>
-    <param name="hololens_rignode" value="hololens_ag$(arg ag_n)/rignode"/>
-    <param name="hololens_rm_vlc_leftfront" value="hololens_ag$(arg ag_n)/rm_vlc_leftfront"/>
+
+    <!-- Parameters -->
+    <param name="hololens_baselink"          value="hololens_ag$(arg ag_n)/base_link"/>
+    <param name="hololens_rignode"           value="hololens_ag$(arg ag_n)/rignode"/>
+    <param name="hololens_rm_vlc_leftfront"  value="hololens_ag$(arg ag_n)/rm_vlc_leftfront"/>
     <param name="hololens_rm_vlc_rightfront" value="hololens_ag$(arg ag_n)/rm_vlc_rightfront"/>
+
   </group>
 </launch>

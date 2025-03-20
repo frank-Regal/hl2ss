@@ -85,15 +85,7 @@ class HoloLensVLCNode:
             img_msg.header.stamp = rospy.Time.now()
             img_msg.header.frame_id =  'vlc'
 
-            # Publish tf_msg at 4Hz
-            # current_time = rospy.Time.now()
-            # if not hasattr(self, 'last_tf_pub_time') or \
-            #     (current_time - self.last_tf_pub_time).to_sec() >= self.publish_rate:  # 1/4 = 0.25 seconds for 4hz
-            #     self.image_pub.publish(img_msg)
-            #     self.last_tf_pub_time = current_time
-
             self.image_pub.publish(img_msg)
-
 
             # Publish /tf if desired
             if self.mode == hl2ss.StreamMode.MODE_1:
