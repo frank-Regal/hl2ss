@@ -14,8 +14,8 @@ license = {text = "MIT"}
 # ]
 
 dependencies = [
-    "numpy",
-    "opencv-python",
+    "numpy==1.21.5",
+    "opencv-python==4.5.4.60",
     "av",
     "pynput",
     "open3d",
