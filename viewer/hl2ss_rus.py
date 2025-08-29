@@ -1,6 +1,6 @@
 
 import struct
-import hl2ss
+from viewer import hl2ss
 
 
 # 3D Primitive Types
